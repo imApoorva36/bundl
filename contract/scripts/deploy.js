@@ -1,24 +1,29 @@
 const { ethers } = require("hardhat");
-require("dotenv").config();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    console.log(`Deploying contract with account: ${deployer.address}`);
+    console.log(`🚀 Deploying with: ${deployer.address}`);
 
-    const currentTime = Math.floor(Date.now() / 1000); // current UNIX timestamp in seconds
-    const unlockTime = currentTime + 7 * 24 * 60 * 60; // 1 week later
+    // Deploy BundlExecutor (wallet logic)
+    const Executor = await ethers.getContractFactory("BundlExecutor");
+    const executor = await Executor.deploy(deployer.address, 0); // dummy args
+    await executor.deployed();
+    console.log(`✅ Wallet logic deployed at: ${executor.address}`);
 
-    const contractFactory = await ethers.getContractFactory("Lock");
-    const deployedContract = await contractFactory.deploy(unlockTime);
+    // Deploy registry
+    const Registry = await ethers.getContractFactory("BundlRegistry");
+    const registry = await Registry.deploy();
+    await registry.deployed();
+    console.log(`✅ Registry deployed at: ${registry.address}`);
 
-    await deployedContract.deployed();
-    console.log(`Contract deployed to: ${deployedContract.address}`);
-    console.log(`Unlock time is: ${unlockTime}`);
+    // Deploy BundlCore
+    const Bundl = await ethers.getContractFactory("BundlCore");
+    const bundl = await Bundl.deploy(registry.address, executor.address);
+    await bundl.deployed();
+    console.log(`✅ BundlCore deployed at: ${bundl.address}`);
 }
 
-main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+main().catch((err) => {
+    console.error("❌ Deployment failed:", err);
+    process.exit(1);
+});
