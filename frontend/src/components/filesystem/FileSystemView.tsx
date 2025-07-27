@@ -21,14 +21,12 @@ import {
   List, 
   ArrowLeft,
   ChevronRight,
-  Home,
   Folder,
   FolderPlus,
   Send
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -41,6 +39,7 @@ import { useFileSystem } from '@/contexts/FileSystemContext'
 import { FileItem } from './FileItem'
 import { CreateFolderDialog, SendFolderDialog } from './ContextDialogs'
 import { Wallet } from '@coinbase/onchainkit/wallet'
+import Image from 'next/image'
 
 export function FileSystemView() {
   const {
@@ -77,11 +76,11 @@ export function FileSystemView() {
     
     if (currentPath.length === 0) {
       // Root level of a chain - show all items without parent for this chain
-      return items.filter(item => item.parentId === null && item.chainId === currentChain.id)
+      return items.filter(item => item.parentId === null && item.chainId === currentChain.chain_id)
     } else {
       // Show items in the current folder for this chain
       const currentFolderId = currentPath[currentPath.length - 1]
-      return items.filter(item => item.parentId === currentFolderId && item.chainId === currentChain.id)
+      return items.filter(item => item.parentId === currentFolderId && item.chainId === currentChain.chain_id)
     }
   }, [items, currentPath, currentChain])
 
@@ -89,7 +88,7 @@ export function FileSystemView() {
   const breadcrumbs = useMemo(() => {
     if (!currentChain) return []
     
-    const crumbs = [{ id: 'chain-root', name: currentChain.name, chainIcon: currentChain.icon }]
+    const crumbs = [{ id: 'chain-root', name: currentChain.chain_name, chainIcon: currentChain.chain_icon }]
     
     for (let i = 0; i < currentPath.length; i++) {
       const folderId = currentPath[i]
@@ -200,7 +199,7 @@ export function FileSystemView() {
       name,
       type: 'folder',
       parentId: currentPath.length > 0 ? currentPath[currentPath.length - 1] : null,
-      chainId: currentChain.id,
+      chainId: currentChain.chain_id,
       modified: new Date(),
     }
 
@@ -228,7 +227,7 @@ export function FileSystemView() {
   return (
     <div className="flex-1 flex flex-col bg-background">
       {/* Header */}
-      <div className="p-4 border-b border-border bg-card">
+      <div className="p-2 border-b border-border bg-card">
         <div className="flex items-center justify-between mb-4">
           {/* Navigation */}
           <div className="flex items-center space-x-2">
@@ -260,7 +259,7 @@ export function FileSystemView() {
                     )}
                   >
                     {index === 0 && crumb.chainIcon ? (
-                      <span className="text-sm mr-1">{crumb.chainIcon}</span>
+                      <Image src={crumb.chainIcon} alt={crumb.name} width={32} height={32} className="mr-1" />
                     ) : null}
                     {crumb.name}
                   </Button>
@@ -387,13 +386,12 @@ export function FileSystemView() {
                     )
                   ) : !currentChain ? (
                     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground min-h-[400px]">
-                      <Wallet className="h-16 w-16 mb-4 text-primary" />
                       <p className="text-lg font-medium text-foreground">Select a blockchain network</p>
                       <p className="text-sm">Choose a chain from the sidebar to view your tokens</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground min-h-[400px]">
-                      <Folder className="h-16 w-16 mb-4 text-primary" />
+                      <Image src="/folder.png" alt="Folder Icon" width={64} height={64} className="m-4" />
                       <p className="text-lg font-medium text-foreground">
                         {currentPath.length === 0 ? 'No tokens or folders on this chain' : 'This folder is empty'}
                       </p>

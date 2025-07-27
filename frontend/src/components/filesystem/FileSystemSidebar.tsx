@@ -1,16 +1,6 @@
 "use client"
 
 import React from 'react'
-import { 
-  Folder, 
-  FolderOpen, 
-  Wallet,
-  Star, 
-  Clock, 
-  Trash,
-  Settings,
-  Plus
-} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -26,10 +16,10 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
 
   // Get folders for the current chain
   const currentChainFolders = items.filter(
-    item => item.type === 'folder' && 
-           item.parentId === null && 
-           currentChain && 
-           item.chainId === currentChain.id
+    item => item.type === 'folder' &&
+      item.parentId === null &&
+      currentChain &&
+      item.chainId === currentChain.chain_id
   )
 
   const handleNavigateToChain = (chainId: number | null) => {
@@ -37,7 +27,7 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
       setCurrentChain(null)
       setCurrentPath([])
     } else {
-      const chain = chains.find(c => c.id === chainId)
+      const chain = chains.find(c => c.chain_id === chainId)
       if (chain) {
         setCurrentChain(chain)
         setCurrentPath([])
@@ -51,7 +41,7 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
 
   const isActiveChain = (chainId: number | null) => {
     if (chainId === null) return currentChain === null
-    return currentChain?.id === chainId
+    return currentChain?.chain_id === chainId
   }
 
   const isActiveFolder = (folderId: string) => {
@@ -59,7 +49,7 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
   }
 
   return (
-    <div className={cn("w-64 bg-gradient-to-br from-background to-primary/30 border-r border-border flex flex-col", className)}>
+    <div className={cn("w-64 bg-background border-r border-border flex flex-col", className)}>
       <div className="p-4">
         <Image
           src="/bundl3.png"
@@ -77,24 +67,28 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
             <h3 className="text-sm font-medium text-muted-foreground">Networks</h3>
           </div>
           <div className="space-y-1">
-            {chains.map((chain) => {
+            {chains && chains.length > 0 ? chains.map((c) => {
               return (
                 <Button
-                  key={chain.id}
-                  variant={isActiveChain(chain.id) ? "default" : "ghost"}
+                  key={c.chain_id}
+                  variant={isActiveChain(c.chain_id) ? "default" : "ghost"}
                   className={cn(
                     "w-full justify-start text-foreground",
-                    isActiveChain(chain.id) 
-                      ? "bg-primary/70 border border-primary text-white hover:bg-primary/90" 
+                    isActiveChain(c.chain_id)
+                      ? "bg-primary/70 border border-primary text-white hover:bg-primary/90"
                       : "hover:bg-secondary hover:text-foreground"
                   )}
-                  onClick={() => handleNavigateToChain(chain.id)}
+                  onClick={() => handleNavigateToChain(c.chain_id)}
                 >
-                  <span className="h-4 w-4 mr-2 text-sm">{chain.icon}</span>
-                  {chain.name}
+                  <Image src={c.chain_icon} alt={c.chain_name} width={20} height={20} className="mr-2" />
+                  {c.chain_name}
                 </Button>
               )
-            })}
+            }) : (
+              <div className="text-sm text-muted-foreground p-2">
+                Loading networks...
+              </div>
+            )}
           </div>
         </div>
 
@@ -104,26 +98,25 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
             <Separator className="bg-border mt-6" />
             <div className="mt-6">
               <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                {currentChain.name} Folders
+                {currentChain.chain_name} Folders
               </h3>
               <div className="space-y-1">
                 {currentChainFolders.map((folder) => {
                   const isActive = isActiveFolder(folder.id)
-                  const Icon = isActive ? FolderOpen : Folder
-                  
+
                   return (
                     <Button
                       key={folder.id}
                       variant={isActive ? "default" : "ghost"}
                       className={cn(
                         "w-full justify-start text-foreground",
-                        isActive 
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                        isActive
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
                           : "hover:bg-secondary hover:text-foreground"
                       )}
                       onClick={() => handleNavigateToFolder(folder.id)}
                     >
-                      <Icon className="h-4 w-4 mr-2 text-primary" />
+                      <Image src="/folder.png" alt="Folder Icon" width={16} height={16} className="mr-2" />
                       {folder.name}
                     </Button>
                   )
@@ -132,18 +125,6 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
             </div>
           </>
         )}
-      </div>
-
-      {/* Settings */}
-      <div className="mt-auto p-4">
-        <Separator className="mb-4 bg-border" />
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start text-foreground hover:bg-secondary hover:text-foreground"
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
-        </Button>
       </div>
     </div>
   )

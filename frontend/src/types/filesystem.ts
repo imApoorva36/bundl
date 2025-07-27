@@ -24,12 +24,9 @@ export interface OrganizationItem {
 }
 
 export interface Chain {
-  id: number
-  name: string
-  shortName: string
-  icon: string
-  color: string
-  rpcUrl?: string
+  chain_id: number
+  chain_name: string
+  chain_icon: string
 }
 
 export type ViewMode = 'grid' | 'list'

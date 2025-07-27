@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { OrganizationItem, ViewMode, Chain, Token } from '@/types/filesystem'
 
 interface TokenOrganizerContextType {
@@ -26,52 +26,6 @@ export function useTokenOrganizer() {
   }
   return context
 }
-
-// Supported chains
-const supportedChains: Chain[] = [
-  {
-    id: 8453,
-    name: 'Base',
-    shortName: 'BASE',
-    icon: '🔵',
-    color: '#0052FF',
-  },
-  {
-    id: 59144,
-    name: 'Linea',
-    shortName: 'LINEA',
-    icon: '🟡',
-    color: '#121212',
-  },
-  {
-    id: 42161,
-    name: 'Arbitrum One',
-    shortName: 'ARB',
-    icon: '🔴',
-    color: '#28A0F0',
-  },
-  {
-    id: 10,
-    name: 'Optimism',
-    shortName: 'OP',
-    icon: '🔴',
-    color: '#FF0420',
-  },
-  {
-    id: 1301,
-    name: 'Unichain',
-    shortName: 'UNI',
-    icon: '🦄',
-    color: '#FF007A',
-  },
-  {
-    id: 324,
-    name: 'zkSync Era',
-    shortName: 'ZKSYNC',
-    icon: '⚡',
-    color: '#8C8DFC',
-  },
-]
 
 // Sample tokens data
 const sampleTokens: Token[] = [
@@ -184,11 +138,54 @@ const sampleData: OrganizationItem[] = [
 ]
 
 export function TokenOrganizerProvider({ children }: { children: React.ReactNode }) {
+  const [supportedChains, setSupportedChains] = useState<Chain[]>([])
   const [items, setItems] = useState<OrganizationItem[]>(sampleData)
-  const [currentChain, setCurrentChain] = useState<Chain | null>(supportedChains[0]) // Default to Base
+  const [currentChain, setCurrentChain] = useState<Chain | null>(null)
   const [currentPath, setCurrentPath] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+
+  useEffect(() => {
+    const getChains = async () => {
+      try {
+        const response = await fetch('/api/chains')
+        if (!response.ok) {
+          throw new Error('Failed to fetch chains')
+        }
+        const data = await response.json()
+        console.log('Fetched chains data:', data); // Debug log
+        setSupportedChains(data.result || []);
+        // Set the first chain as default once chains are loaded
+        if (data.results && data.results.length > 0) {
+          setCurrentChain(data.results[0])
+        }
+      } catch (error) {
+        console.error('Error fetching chains:', error)
+        // Set fallback chains data
+        const fallbackChains = [
+          {
+            chain_id: 1,
+            chain_name: 'Ethereum',
+            chain_icon: '/bundl.png'
+          },
+          {
+            chain_id: 8453,
+            chain_name: 'Base',
+            chain_icon: '/bundl.png'
+          },
+          {
+            chain_id: 42161,
+            chain_name: 'Arbitrum',
+            chain_icon: '/bundl.png'
+          }
+        ];
+        setSupportedChains(fallbackChains)
+        setCurrentChain(fallbackChains[0])
+      }
+    }
+
+    getChains()
+  }, [])
 
   const value = {
     items,

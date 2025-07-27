@@ -3,14 +3,9 @@
 import React from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { 
-  Folder, 
-  FolderOpen,
-  Coins,
-  DollarSign
-} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { OrganizationItem } from '@/types/filesystem'
+import Image from 'next/image'
 
 interface TokenItemProps {
   item: OrganizationItem
@@ -75,10 +70,6 @@ export function FileItem({
     transition,
   }
 
-  const Icon = item.type === 'folder' 
-    ? (isSelected ? FolderOpen : Folder)
-    : Coins
-
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     onSelect(item.id, e.ctrlKey || e.metaKey)
@@ -97,7 +88,7 @@ export function FileItem({
         {...attributes}
         {...listeners}
         className={cn(
-          "group p-4 rounded-lg border-2 border-transparent hover:border-border cursor-pointer transition-all",
+          "group p-4 rounded-lg border-2 border-transparent hover:border-primary cursor-pointer transition-all",
           "bg-card hover:bg-secondary",
           isSelected && "border-primary bg-primary/10",
           isDragging && "opacity-50 scale-95"
@@ -106,10 +97,7 @@ export function FileItem({
         onDoubleClick={handleDoubleClick}
       >
         <div className="flex flex-col items-center space-y-2">
-          <Icon className={cn(
-            "h-12 w-12",
-            item.type === 'folder' ? "text-primary" : "text-primary"
-          )} />
+          <Image src="/folder.png" alt="Folder Icon" width={64} height={64} className="m-2" />
           <div className="text-center">
             <p className="text-sm font-medium truncate max-w-[120px] text-foreground" title={item.name}>
               {item.name}
@@ -143,10 +131,7 @@ export function FileItem({
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
-      <Icon className={cn(
-        "h-5 w-5 mr-3 flex-shrink-0",
-        item.type === 'folder' ? "text-primary" : "text-primary"
-      )} />
+      <Image src="/folder.png" alt="Folder Icon" width={20} height={20} className="mx-4" />
       
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
