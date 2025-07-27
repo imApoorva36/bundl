@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Wallet } from "@coinbase/onchainkit/wallet"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -23,6 +24,7 @@ export default function Home() {
             Go to Dashboard
           </Button>
         </Link>
+        <Wallet/>
       </div>
     </div>
   )

@@ -23,7 +23,6 @@ import {
   ChevronRight,
   Home,
   Folder,
-  Wallet,
   FolderPlus,
   Send
 } from 'lucide-react'
@@ -41,6 +40,7 @@ import { OrganizationItem, DragData } from '@/types/filesystem'
 import { useFileSystem } from '@/contexts/FileSystemContext'
 import { FileItem } from './FileItem'
 import { CreateFolderDialog, SendFolderDialog } from './ContextDialogs'
+import { Wallet } from '@coinbase/onchainkit/wallet'
 
 export function FileSystemView() {
   const {
@@ -270,7 +270,9 @@ export function FileSystemView() {
           </div>
 
           {/* View Controls */}
+          <div className='flex items-center space-x-2'>
           <div className="flex items-center space-x-2">
+
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
               size="sm"
@@ -295,6 +297,9 @@ export function FileSystemView() {
             >
               <List className="h-4 w-4" />
             </Button>
+          </div>
+          <Wallet
+          />
           </div>
         </div>
 
