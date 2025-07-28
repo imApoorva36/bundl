@@ -96,7 +96,7 @@ contract BundlRegistry {
     ) internal pure returns (bytes memory) {
         return
             abi.encodePacked(
-                type(BundlExecutor).creationCode, // ✅ requires BundlExecutor to be in scope
+                type(BundlExecutor).creationCode,
                 abi.encode(tokenContract, tokenId)
             );
     }
