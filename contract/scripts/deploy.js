@@ -27,11 +27,6 @@ async function main() {
     const predicateAddress = "0xc405b2d27680038fBa522A0b5e037De31ACC6e18";
     console.log(`Predicate already deployed at: ${predicateAddress}`);
 
-    console.log("\n=== ALL CONTRACTS READY FOR TESTING ===");
-    console.log(`BundlExecutor: ${bundlExecutor.address}`);
-    console.log(`Registry: ${registry.address}`);
-    console.log(`BundlCore: ${bundlCore.address}`);
-    console.log(`Predicate: ${predicateAddress}`);
 }
 
 main()
