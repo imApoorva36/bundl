@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Folder,
   FolderPlus,
-  Send
+  Send,
+  Plus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -37,7 +38,7 @@ import {
 import { OrganizationItem, DragData } from '@/types/filesystem'
 import { useFileSystem } from '@/contexts/FileSystemContext'
 import { FileItem } from './FileItem'
-import { CreateFolderDialog, SendFolderDialog } from './ContextDialogs'
+import { CreateFolderDialog, SendFolderDialog, AddTokenDialog } from './ContextDialogs'
 import { Wallet } from '@coinbase/onchainkit/wallet'
 import Image from 'next/image'
 
@@ -56,6 +57,7 @@ export function FileSystemView() {
 
   const [draggedItem, setDraggedItem] = React.useState<OrganizationItem | null>(null)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
+  const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
   const [isSendFolderOpen, setIsSendFolderOpen] = useState(false)
   const [selectedFolderForSend, setSelectedFolderForSend] = useState<OrganizationItem | null>(null)
 
@@ -219,6 +221,34 @@ export function FileSystemView() {
     setIsCreateFolderOpen(true)
   }
 
+  const handleAddToken = () => {
+    setIsAddTokenOpen(true)
+  }
+
+  const handleConfirmAddToken = (tokenAddress: string, tokenName: string) => {
+    if (!currentChain) return
+
+    const newToken: OrganizationItem = {
+      id: `token-${Date.now()}`,
+      name: tokenName,
+      type: 'token',
+      parentId: currentPath.length > 0 ? currentPath[currentPath.length - 1] : null,
+      chainId: currentChain.chain_id,
+      modified: new Date(),
+      token: {
+        id: `token-${Date.now()}`,
+        name: tokenName,
+        symbol: tokenName.toUpperCase(),
+        address: tokenAddress,
+        decimals: 18, // Default decimals, could be fetched from contract
+        balance: '0',
+        chainId: currentChain.chain_id,
+      }
+    }
+
+    setItems(prevItems => [...prevItems, newToken])
+  }
+
   const handleContextMenuSendFolder = (folder: OrganizationItem) => {
     setSelectedFolderForSend(folder)
     setIsSendFolderOpen(true)
@@ -270,8 +300,24 @@ export function FileSystemView() {
 
           {/* View Controls */}
           <div className='flex items-center space-x-2'>
+              <Button
+              size={'sm'}
+              onClick={currentPath.length > 0 ? handleAddToken : handleContextMenuCreateFolder}
+              >
+                {currentPath.length > 0 ? (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Token
+                  </>
+                ) : (
+                  <>
+                    <FolderPlus className="h-4 w-4 mr-2" />
+                    Create New Folder
+                  </>
+                )}
+              </Button>
+          
           <div className="flex items-center space-x-2">
-
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
               size="sm"
@@ -421,10 +467,17 @@ export function FileSystemView() {
           </ContextMenuTrigger>
           {currentChain && (
             <ContextMenuContent>
-              <ContextMenuItem onClick={handleContextMenuCreateFolder}>
-                <FolderPlus className="h-4 w-4 mr-2" />
-                Create New Folder
-              </ContextMenuItem>
+              {currentPath.length > 0 ? (
+                <ContextMenuItem onClick={handleAddToken}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Token
+                </ContextMenuItem>
+              ) : (
+                <ContextMenuItem onClick={handleContextMenuCreateFolder}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  Create New Folder
+                </ContextMenuItem>
+              )}
             </ContextMenuContent>
           )}
         </ContextMenu>
@@ -435,6 +488,16 @@ export function FileSystemView() {
         isOpen={isCreateFolderOpen}
         onClose={() => setIsCreateFolderOpen(false)}
         onConfirm={handleCreateFolder}
+      />
+      
+      <AddTokenDialog
+        isOpen={isAddTokenOpen}
+        onClose={() => setIsAddTokenOpen(false)}
+        onConfirm={handleConfirmAddToken}
+        folderName={currentPath.length > 0 ? 
+          (items.find(item => item.id === currentPath[currentPath.length - 1])?.name || 'Current Folder') : 
+          'Root'
+        }
       />
       
       <SendFolderDialog

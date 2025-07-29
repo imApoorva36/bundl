@@ -39,13 +39,13 @@ function formatDate(date: Date): string {
   })
 }
 
-export function FileItem({ 
-  item, 
-  isSelected, 
-  viewMode, 
-  onSelect, 
+export function FileItem({
+  item,
+  isSelected,
+  viewMode,
+  onSelect,
   onDoubleClick,
-  isDragging: propIsDragging 
+  isDragging: propIsDragging
 }: TokenItemProps) {
   const {
     attributes,
@@ -54,7 +54,7 @@ export function FileItem({
     transform,
     transition,
     isDragging: sortableIsDragging,
-  } = useSortable({ 
+  } = useSortable({
     id: item.id,
     data: {
       type: item.type,
@@ -97,7 +97,11 @@ export function FileItem({
         onDoubleClick={handleDoubleClick}
       >
         <div className="flex flex-col items-center space-y-2">
-          <Image src="/folder.png" alt="Folder Icon" width={64} height={64} className="m-2" />
+          {item.type === 'folder' ? (
+            <Image src="/folder.png" alt="Folder Icon" width={64} height={64} className="m-2" />
+          ) : (
+            <Image src="/coin.png" alt="Token Icon" width={64} height={64} className="m-2" />
+          )}
           <div className="text-center">
             <p className="text-sm font-medium truncate max-w-[120px] text-foreground" title={item.name}>
               {item.name}
@@ -131,8 +135,11 @@ export function FileItem({
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
-      <Image src="/folder.png" alt="Folder Icon" width={20} height={20} className="mx-4" />
-      
+      {item.type === 'folder' ? (
+        <Image src="/folder.png" alt="Folder Icon" width={64} height={64} className="m-2" />
+      ) : (
+        <Image src="/coin.png" alt="Token Icon" width={64} height={64} className="m-2" />
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
         {item.type === 'token' && item.token && (
@@ -141,7 +148,7 @@ export function FileItem({
           </p>
         )}
       </div>
-      
+
       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
         {item.modified && (
           <span className="hidden sm:block">

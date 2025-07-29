@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Folder, Send } from 'lucide-react'
+import { Folder, Send, Plus } from 'lucide-react'
 
 interface CreateFolderDialogProps {
   isOpen: boolean
@@ -156,6 +156,78 @@ export function SendFolderDialog({ isOpen, onClose, onConfirm, folderName }: Sen
             </Button>
             <Button type="submit" disabled={!isValidAddress}>
               Send Folder
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface AddTokenDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: (tokenAddress: string, tokenName: string) => void
+  folderName: string
+}
+
+export function AddTokenDialog({ isOpen, onClose, onConfirm, folderName }: AddTokenDialogProps) {
+  const [someInput, setSomeInput] = useState('')
+
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newInput = e.target.value
+    setSomeInput(newInput)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (someInput.trim()) {
+      onConfirm(someInput.trim(), 'New Token') // Replace 'New Token' with actual token name logic
+      setSomeInput('')
+      onClose()
+    }
+  }
+
+  const handleClose = () => {
+    setSomeInput('')
+    onClose()
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5 text-primary" />
+            Add Token to {folderName}
+          </DialogTitle>
+          <DialogDescription>
+            Enter the token contract address and name to add it to this folder.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="token-address" className="text-right">
+                Input
+              </Label>
+              <Input
+                id="token-address"
+                value={someInput}
+                onChange={handleInputChange}
+                placeholder="..."
+                className="col-span-3"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!someInput.trim()}>
+              Add Token
             </Button>
           </DialogFooter>
         </form>
