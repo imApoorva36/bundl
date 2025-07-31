@@ -66,6 +66,7 @@ export function FileSystemView() {
     createWallet,
     getWalletAddress,
     sendFolder: sendFolderContract,
+    mergeFolderContents,
     isConnected,
     address,
     account,
@@ -491,32 +492,51 @@ export function FileSystemView() {
     }
   };
 
-  const handleSendFolder = async (address: string) => {
+  const handleSendFolder = async (targetInput: string, action: 'transfer' | 'merge') => {
     if (selectedFolderForSend) {
       try {
         console.log('Selected folder for send:', selectedFolderForSend);
-        const tokenId = selectedFolderForSend.tokenId;
-        console.log('Token ID:', tokenId, 'Type:', typeof tokenId);
+        const fromTokenId = selectedFolderForSend.tokenId;
+        console.log('Token ID:', fromTokenId, 'Type:', typeof fromTokenId);
         
-        if (!tokenId && tokenId !== 0) {
+        if (!fromTokenId && fromTokenId !== 0) {
           throw new Error('Invalid folder tokenId');
         }
         
-        // Transfer folder ownership (NFT) to the recipient
-        // This gives them access to the folder wallet and all its contents
-        console.log('Transferring folder ownership to:', address);
-        const result = await sendFolderContract(tokenId, address);
-        
-        if (result && result.success) {
-          console.log('Folder successfully transferred!');
-          // Refresh the folder list to show updated ownership
-          await loadUserFolders();
+        if (action === 'merge') {
+          // Merge contents into another folder
+          const toTokenId = parseInt(targetInput);
+          if (isNaN(toTokenId)) {
+            throw new Error('Invalid target folder ID');
+          }
           
-          setSelectedFolderForSend(null);
-          setIsSendFolderOpen(false);
+          console.log('Merging folder contents from:', fromTokenId, 'to:', toTokenId);
+          const result = await mergeFolderContents(fromTokenId, toTokenId);
+          
+          if (result && result.success) {
+            console.log('Folder contents successfully merged!');
+            // Refresh the folder list to show updated contents
+            await loadUserFolders();
+            
+            setSelectedFolderForSend(null);
+            setIsSendFolderOpen(false);
+          }
+        } else {
+          // Transfer folder ownership (NFT) to the recipient address
+          console.log('Transferring folder ownership to:', targetInput);
+          const result = await sendFolderContract(fromTokenId, targetInput);
+          
+          if (result && result.success) {
+            console.log('Folder successfully transferred!');
+            // Refresh the folder list to show updated ownership
+            await loadUserFolders();
+            
+            setSelectedFolderForSend(null);
+            setIsSendFolderOpen(false);
+          }
         }
       } catch (error) {
-        console.error('Error sending folder:', error);
+        console.error('Error with folder operation:', error);
       }
     }
   }

@@ -188,7 +188,7 @@ interface SendFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folder: OrganizationItem | null;
-  onConfirm: (toAddress: string) => void;
+  onConfirm: (toAddress: string, action: 'transfer' | 'merge') => void;
   loading?: boolean;
 }
 
@@ -200,11 +200,12 @@ export function SendFolderDialog({
   loading = false 
 }: SendFolderDialogProps) {
   const [toAddress, setToAddress] = useState('');
+  const [action, setAction] = useState<'transfer' | 'merge'>('merge');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (toAddress.trim()) {
-      onConfirm(toAddress.trim());
+      onConfirm(toAddress.trim(), action);
       setToAddress('');
     }
   };
@@ -213,22 +214,60 @@ export function SendFolderDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Send Folder</DialogTitle>
+          <DialogTitle>Send Folder Assets</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <p className="text-sm text-gray-600 mb-4">
-              Send folder "{folder?.name}" to another address
+              Choose how to send folder "{folder?.name}"
             </p>
+            
+            {/* Action Selection */}
+            <div className="mb-4 space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="merge"
+                  value="merge"
+                  checked={action === 'merge'}
+                  onChange={(e) => setAction(e.target.value as 'merge')}
+                  className="form-radio"
+                />
+                <label htmlFor="merge" className="text-sm">
+                  <strong>Merge Contents:</strong> Move all assets from this folder to another folder you own
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="transfer"
+                  value="transfer"
+                  checked={action === 'transfer'}
+                  onChange={(e) => setAction(e.target.value as 'transfer')}
+                  className="form-radio"
+                />
+                <label htmlFor="transfer" className="text-sm">
+                  <strong>Gift Folder:</strong> Transfer entire folder ownership (as NFT) to another address
+                </label>
+              </div>
+            </div>
+            
             <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="to-address">Recipient Address</Label>
+              <Label htmlFor="to-address">
+                {action === 'merge' ? 'Target Folder ID' : 'Recipient Address'}
+              </Label>
               <Input
                 id="to-address"
                 value={toAddress}
                 onChange={(e) => setToAddress(e.target.value)}
-                placeholder="0x..."
+                placeholder={action === 'merge' ? 'Enter folder ID (e.g., 2)' : '0x...'}
                 disabled={loading}
               />
+              {action === 'merge' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter the ID of another folder you own to merge assets into
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -244,7 +283,7 @@ export function SendFolderDialog({
               type="submit" 
               disabled={!toAddress.trim() || loading}
             >
-              {loading ? 'Sending...' : 'Send Folder'}
+              {loading ? 'Processing...' : (action === 'merge' ? 'Merge Assets' : 'Gift Folder')}
             </Button>
           </DialogFooter>
         </form>

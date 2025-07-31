@@ -1102,3 +1102,5 @@ export const BUNDL_REGISTRY_ABI = [
 ] as const;
 
 export const BUNDL_EXECUTOR_ABI = [] as const;
+
+export const PREDICATE_ABI = [] as const;
