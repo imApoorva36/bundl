@@ -49,14 +49,14 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
   }
 
   return (
-    <div className={cn("w-64 bg-background border-r border-border flex flex-col", className)}>
-      <div className="p-4">
+    <div className={cn("w-64 bg-background border-r border-border flex flex-col overflow-hidden", className)}>
+      <div className="p-4 flex-1 overflow-auto">
         <Image
           src="/bundl3.png"
           alt="Logo"
           width={250}
           height={32}
-          className="mb-4"
+          className="mb-4 max-w-full h-auto"
         />
 
         <Separator className="bg-border" />
@@ -80,8 +80,8 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
                   )}
                   onClick={() => handleNavigateToChain(c.chain_id)}
                 >
-                  <Image src={c.chain_icon} alt={c.chain_name} width={20} height={20} className="mr-2" />
-                  {c.chain_name}
+                  <Image src={c.chain_icon} alt={c.chain_name} width={20} height={20} className="mr-2 shrink-0" />
+                  <span className="truncate">{c.chain_name}</span>
                 </Button>
               )
             }) : (
@@ -116,8 +116,8 @@ export function FileSystemSidebar({ className }: FileSystemSidebarProps) {
                       )}
                       onClick={() => handleNavigateToFolder(folder.id)}
                     >
-                      <Image src="/folder.png" alt="Folder Icon" width={16} height={16} className="mr-2" />
-                      {folder.name}
+                      <Image src="/folder.png" alt="Folder Icon" width={16} height={16} className="mr-2 shrink-0" />
+                      <span className="truncate">{folder.name}</span>
                     </Button>
                   )
                 })}

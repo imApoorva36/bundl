@@ -20,6 +20,7 @@ class PriceService {
     'USDT': 'tether',
     'WETH': 'weth',
     'DAI': 'dai',
+    'EURC': 'euro-coin',
     // Add more as needed
   };
 

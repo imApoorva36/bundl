@@ -10,9 +10,9 @@ export default function DashboardLayout({
 }) {
   return (
     <TokenOrganizerProvider>
-      <div className="h-screen flex">
-        <FileSystemSidebar />
-        <div className="flex-1 flex">
+      <div className="h-screen flex overflow-hidden">
+        <FileSystemSidebar className="hidden lg:flex" />
+        <div className="flex-1 flex min-w-0">
           {children}
         </div>
       </div>

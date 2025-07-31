@@ -27,7 +27,8 @@ import {
   FolderPlus,
   Send,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Menu
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -38,13 +39,20 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { OrganizationItem, Token } from '@/types/filesystem'
 import { useFileSystem } from '@/contexts/FileSystemContext'
 import { FileItem } from './FileItem'
+import { FileSystemSidebar } from './FileSystemSidebar'
 import { CreateFolderDialog, SendFolderDialog, CreateTokenDialog } from './ContextDialogs'
 import { useBundlContracts } from '@/hooks/useBundlContracts'
 import { bundlContractUtils, BundlContractUtils } from '@/lib/contracts/BundlContractUtils'
 import Image from 'next/image'
+import { Separator } from '../ui/separator'
 
 export function FileSystemView() {
   const {
@@ -135,7 +143,7 @@ export function FileSystemView() {
       
       // Get all token balances
       const allTokens = await bundlContractUtils.getUserAllTokens();
-      
+
       // Calculate total USD value
       let totalUSDValue = 0;
       
@@ -155,7 +163,9 @@ export function FileSystemView() {
           token.address === '0x0000000000000000000000000000000000000000' ? undefined : token.address,
           currentChain.chain_id
         );
-        totalUSDValue += parseFloat(usdValue.toString());
+        // remove '$' and commas for calculation
+        const numericValue = parseFloat(usdValue.replace(/[$,]/g, ''));
+        totalUSDValue += numericValue;
       }
       
       setPortfolioValue({
@@ -556,81 +566,203 @@ export function FileSystemView() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
+    <div className="flex-1 flex flex-col bg-background min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="p-2 border-b border-border bg-card">
-        <div className="flex items-center justify-between mb-4">
-          {/* Navigation */}
-          <div className="flex items-center space-x-2">
-            {currentPath.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNavigateBack}
-                className="border-border text-foreground hover:bg-secondary"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {/* Breadcrumbs */}
-            <div className="flex items-center space-x-1">
-              {breadcrumbs.map((crumb, index) => (
-                <React.Fragment key={crumb.id}>
-                  {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+      <div className="p-4 border-b border-border bg-card">
+        <div className="flex flex-col gap-4 lg:gap-3">
+          {/* Navigation Row */}
+          <div className="flex items-center justify-between gap-4">
+            {/* Navigation */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {/* Mobile Sidebar Toggle */}
+              <Sheet>
+                <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleBreadcrumbClick(index)}
-                    className={cn(
-                      "text-sm hover:bg-secondary",
-                      index === breadcrumbs.length - 1 
-                        ? "font-medium text-foreground" 
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
+                    className="lg:hidden shrink-0"
                   >
-                    {index === 0 && crumb.chainIcon ? (
-                      <Image src={crumb.chainIcon} alt={crumb.name} width={32} height={32} className="mr-1" />
-                    ) : null}
-                    {crumb.name}
+                    <Menu className="h-4 w-4" />
                   </Button>
-                </React.Fragment>
-              ))}
+                </SheetTrigger>
+                <SheetContent side="left" className="w-64 p-0">
+                  <FileSystemSidebar />
+                </SheetContent>
+              </Sheet>
+
+              {currentPath.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNavigateBack}
+                  className="shrink-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {/* Breadcrumbs */}
+              <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                {breadcrumbs.map((crumb, index) => (
+                  <React.Fragment key={crumb.id}>
+                    {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleBreadcrumbClick(index)}
+                      className={cn(
+                        "min-w-0 max-w-[200px] text-sm hover:bg-secondary-foreground",
+                        index === breadcrumbs.length - 1 
+                          ? "font-medium text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {index === 0 && crumb.chainIcon ? (
+                        <Image src={crumb.chainIcon} alt={crumb.name} width={20} height={20} className="mr-1 shrink-0" />
+                      ) : index > 0 ? (
+                        <Image src="/folder.png" alt="Folder Icon" width={16} height={16} className="mr-1 shrink-0" />
+                      ) : null}
+                      <span className="truncate">{crumb.name}</span>
+                    </Button>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+
+            {/* Portfolio Value and Connection Status - Desktop */}
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Portfolio Value Display */}
+              {isConnected && currentChain && (
+                <div className="flex items-center gap-3 px-3 py-1 bg-gray-50 text-gray-700 rounded-md text-sm border border-gray-200">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold truncate">{portfolioValue.eth} ETH</span>
+                      <span className="text-blue-600 dark:text-blue-400">•</span>
+                      <span className="font-semibold truncate">{portfolioValue.usd}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Wallet Connection Status */}
+              <div className="flex items-center gap-2">
+                {!isConnected ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={connectWallet}
+                    disabled={loading}
+                    className="text-orange-600 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                  >
+                    {loading ? 'Connecting...' : 'Connect Wallet'}
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 rounded-md text-sm border border-green-200 dark:border-green-800">
+                    <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                    <span className="truncate max-w-[120px]">
+                      {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}
+                    </span>
+                  </div>
+                )}
+                
+                {error && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={clearError}
+                    className="text-xs max-w-[200px]"
+                  >
+                    <span className="truncate">{error}</span> ✕
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* View Controls */}
-          <div className='flex items-center space-x-2'>
+          <Separator className=" bg-gray-700" />
+
+          {/* Status and Action Buttons Row */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Status */}
+            <div className="text-sm text-muted-foreground">
+              {currentItems.length} items
+              {selectedItems.length > 0 && ` • ${selectedItems.length} selected`}
+            </div>
+
+            {/* Action Buttons - Desktop */}
+            <div className="hidden sm:flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleContextMenuCreateFolder}
+                disabled={!isConnected}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Folder
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={calculatePortfolioValue}
+                disabled={!isConnected}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-r-none border-0"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-l-none border-0"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Portfolio Value and Connection Status Row - Mobile */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:hidden">
             {/* Portfolio Value Display */}
             {isConnected && currentChain && (
-              <div className="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-md text-sm border border-blue-200">
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-blue-600 font-medium">Total Portfolio</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-semibold">{portfolioValue.eth} ETH</span>
-                    <span className="text-blue-600">•</span>
-                    <span className="font-semibold">{portfolioValue.usd}</span>
+              <div className="flex items-center gap-3 px-3 py-1 bg-gray-50 text-gray-700 rounded-md text-sm border border-gray-200">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold truncate">{portfolioValue.eth} ETH</span>
+                    <span className="text-blue-600 dark:text-blue-400">•</span>
+                    <span className="font-semibold truncate">{portfolioValue.usd}</span>
                   </div>
                 </div>
               </div>
             )}
             
             {/* Wallet Connection Status */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               {!isConnected ? (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={connectWallet}
                   disabled={loading}
-                  className="text-orange-500 border-orange-500 hover:bg-orange-50"
+                  className="text-orange-600 border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30"
                 >
                   {loading ? 'Connecting...' : 'Connect Wallet'}
                 </Button>
               ) : (
-                <div className="flex items-center space-x-2 px-2 py-1 bg-green-50 text-green-700 rounded-md text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>{address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 rounded-md text-sm border border-green-200 dark:border-green-800">
+                  <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                  <span className="truncate max-w-[120px]">
+                    {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}
+                  </span>
                 </div>
               )}
               
@@ -639,70 +771,60 @@ export function FileSystemView() {
                   variant="destructive"
                   size="sm"
                   onClick={clearError}
-                  className="text-xs"
+                  className="text-xs max-w-[200px]"
                 >
-                  {error} ✕
+                  <span className="truncate">{error}</span> ✕
                 </Button>
               )}
             </div>
-
-            <Button
-              size={'sm'}
-              onClick={handleContextMenuCreateFolder}
-              disabled={!isConnected}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Folder
-            </Button>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={calculatePortfolioValue}
-              disabled={!isConnected}
-              className="border-border text-foreground hover:bg-secondary"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className={cn(
-                viewMode === 'grid' 
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                  : "border-border text-foreground hover:bg-secondary"
-              )}
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className={cn(
-                viewMode === 'list' 
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                  : "border-border text-foreground hover:bg-secondary"
-              )}
-            >
-              <List className="h-4 w-4" />
-            </Button>
           </div>
+
+          {/* Mobile Action Buttons */}
+          <div className="flex sm:hidden items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleContextMenuCreateFolder}
+                disabled={!isConnected}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={calculatePortfolioValue}
+                disabled={!isConnected}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="rounded-r-none border-0"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="rounded-l-none border-0"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-
-        {/* Status */}
-        <p className="text-sm text-muted-foreground">
-          {currentItems.length} items
-          {selectedItems.length > 0 && ` • ${selectedItems.length} selected`}
-        </p>
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-auto">
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <div className="w-full min-h-full">
@@ -718,7 +840,7 @@ export function FileSystemView() {
                 >
                   {currentItems.length > 0 ? (
                     viewMode === 'grid' ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 auto-rows-max">
                         {currentItems.map((item) => (
                           <ContextMenu key={item.id}>
                             <ContextMenuTrigger>
@@ -752,7 +874,7 @@ export function FileSystemView() {
                         ))}
                       </div>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {currentItems.map((item) => (
                           <ContextMenu key={item.id}>
                             <ContextMenuTrigger>
@@ -787,20 +909,20 @@ export function FileSystemView() {
                       </div>
                     )
                   ) : !currentChain ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground min-h-[400px]">
-                      <p className="text-lg font-medium text-foreground">Select a blockchain network</p>
-                      <p className="text-sm">Choose a chain from the sidebar to view your tokens</p>
+                    <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px] px-4">
+                      <p className="text-lg font-medium text-foreground mb-2">Select a blockchain network</p>
+                      <p className="text-sm text-muted-foreground max-w-md">Choose a chain from the sidebar to view your tokens and manage your portfolio</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground min-h-[400px]">
-                      <Image src="/folder.png" alt="Folder Icon" width={64} height={64} className="m-4" />
-                      <p className="text-lg font-medium text-foreground">
+                    <div className="flex flex-col items-center justify-center py-16 text-center min-h-[400px] px-4">
+                      <Image src="/folder.png" alt="Folder Icon" width={64} height={64} className="mb-4 opacity-50" />
+                      <p className="text-lg font-medium text-foreground mb-2">
                         {currentPath.length === 0 ? 'No tokens or folders on this chain' : 'This folder is empty'}
                       </p>
-                      <p className="text-sm">
+                      <p className="text-sm text-muted-foreground max-w-md">
                         {currentPath.length === 0 
-                          ? 'Right-click to create folders to organize your tokens' 
-                          : 'Right-click to add tokens or create subfolders'}
+                          ? 'Create folders to organize your tokens and manage your crypto assets efficiently' 
+                          : 'Add tokens or create subfolders to organize your assets'}
                       </p>
                     </div>
                   )}
