@@ -1,11 +1,17 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
 import { OrganizationItem } from '@/types/filesystem'
 import Image from 'next/image'
+import { Copy, Check, Wallet } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface TokenItemProps {
   item: OrganizationItem
@@ -37,6 +43,72 @@ function formatDate(date: Date): string {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+interface WalletAddressProps {
+  address: string
+  className?: string
+}
+
+function WalletAddress({ address, className }: WalletAddressProps) {
+  const [copied, setCopied] = useState(false)
+
+  const copyToClipboard = async (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent folder selection when clicking copy
+    try {
+      await navigator.clipboard.writeText(address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+    }
+  }
+
+  if (address === 'Loading...') {
+    return (
+      <div className={cn("text-xs text-muted-foreground", className)}>
+        <span>Loading wallet...</span>
+      </div>
+    )
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={cn("flex items-center gap-1 text-xs text-muted-foreground", className)}>
+          <span className="font-mono truncate">
+            {address.slice(0, 6)}...{address.slice(-4)}
+          </span>
+          <button
+            onClick={copyToClipboard}
+            className="p-0.5 hover:bg-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Copy wallet address"
+          >
+            {copied ? (
+              <Check className="h-3 w-3 text-green-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs">{address}</span>
+          <button
+            onClick={copyToClipboard}
+            className="p-1 hover:bg-secondary rounded"
+          >
+            {copied ? (
+              <Check className="h-3 w-3 text-green-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  )
 }
 
 export function FileItem({
@@ -103,9 +175,19 @@ export function FileItem({
             <Image src="/coin.png" alt="Token Icon" width={64} height={64} className="m-2" />
           )}
           <div className="text-center">
-            <p className="text-sm font-medium truncate max-w-[120px] text-foreground" title={item.name}>
-              {item.name}
-            </p>
+            <div className="flex items-center justify-center gap-1">
+              <p className="text-sm font-medium truncate max-w-[100px] text-foreground" title={item.name}>
+                {item.name}
+              </p>
+              {item.type === 'folder' && item.walletAddress && item.walletAddress !== 'Loading...' && (
+                <div title="Has wallet">
+                  <Wallet className="h-3 w-3 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+            {item.type === 'folder' && item.walletAddress && (
+              <WalletAddress address={item.walletAddress} className="mt-1" />
+            )}
             {item.type === 'token' && item.token && (
               <div className="text-xs text-muted-foreground">
                 <p>{formatTokenBalance(item.token.balance, item.token.symbol)}</p>
@@ -141,7 +223,17 @@ export function FileItem({
         <Image src="/coin.png" alt="Token Icon" width={64} height={64} className="m-2" />
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
+          {item.type === 'folder' && item.walletAddress && item.walletAddress !== 'Loading...' && (
+            <div title="Has wallet">
+              <Wallet className="h-3 w-3 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+        {item.type === 'folder' && item.walletAddress && (
+          <WalletAddress address={item.walletAddress} />
+        )}
         {item.type === 'token' && item.token && (
           <p className="text-xs text-muted-foreground">
             {item.token.symbol} • {item.token.balance}

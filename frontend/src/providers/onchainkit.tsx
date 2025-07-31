@@ -1,20 +1,25 @@
 'use client';
 
-import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { WagmiProvider } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { baseSepolia } from 'wagmi/chains';
+import { getConfig } from '@/lib/wagmi';
 
-export function Providers(props: { children: ReactNode }) {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+export function Providers({ children }: { children: ReactNode }) {
   return (
-    <OnchainKitProvider
-      chain={baseSepolia}
-      config={{
-        appearance: {
-          mode: 'light',
-        }
-      }}
-    >
-      {props.children}
-    </OnchainKitProvider>
+    <WagmiProvider config={getConfig()}>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }

@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
+import { ethers } from 'ethers'
 import {
   DndContext,
   DragEndEvent,
@@ -16,6 +17,7 @@ import {
   arrayMove,
   rectSortingStrategy,
 } from '@dnd-kit/sortable'
+import { priceService } from '../../lib/priceService'
 import { 
   Grid3X3, 
   List, 
@@ -24,7 +26,8 @@ import {
   Folder,
   FolderPlus,
   Send,
-  Plus
+  Plus,
+  RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -35,11 +38,12 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import { OrganizationItem, DragData } from '@/types/filesystem'
+import { OrganizationItem, Token } from '@/types/filesystem'
 import { useFileSystem } from '@/contexts/FileSystemContext'
 import { FileItem } from './FileItem'
-import { CreateFolderDialog, SendFolderDialog, AddTokenDialog } from './ContextDialogs'
-import { Wallet } from '@coinbase/onchainkit/wallet'
+import { CreateFolderDialog, SendFolderDialog, CreateTokenDialog } from './ContextDialogs'
+import { useBundlContracts } from '@/hooks/useBundlContracts'
+import { bundlContractUtils, BundlContractUtils } from '@/lib/contracts/BundlContractUtils'
 import Image from 'next/image'
 
 export function FileSystemView() {
@@ -55,11 +59,211 @@ export function FileSystemView() {
     setSelectedItems,
   } = useFileSystem()
 
+  const {
+    createFolder: createFolderContract,
+    getUserFolders,
+    createToken,
+    createWallet,
+    getWalletAddress,
+    sendFolder: sendFolderContract,
+    isConnected,
+    address,
+    account,
+    loading,
+    error,
+    connectWallet,
+    clearError
+  } = useBundlContracts()
+
   const [draggedItem, setDraggedItem] = React.useState<OrganizationItem | null>(null)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
-  const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
+  const [isCreateTokenOpen, setIsCreateTokenOpen] = useState(false)
   const [isSendFolderOpen, setIsSendFolderOpen] = useState(false)
   const [selectedFolderForSend, setSelectedFolderForSend] = useState<OrganizationItem | null>(null)
+  const [selectedFolderForToken, setSelectedFolderForToken] = useState<OrganizationItem | null>(null)
+  const [portfolioValue, setPortfolioValue] = useState<{ eth: string; usd: string }>({ eth: '0', usd: '$0.00' })
+
+  const [bundlContractUtils] = useState(() => new BundlContractUtils());
+
+  useEffect(() => {
+    if (!isConnected) {
+      connectWallet();
+    }
+  }, [isConnected, connectWallet]);
+
+  useEffect(() => {
+    if (isConnected) {
+      loadUserFolders();
+    }
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (isConnected && currentChain) {
+      loadUserFolders();
+    }
+  }, [currentChain, isConnected]);
+
+  // Set up event listener for folder transfers
+  useEffect(() => {
+    if (isConnected) {
+      const handleFolderTransfer = (tokenId: number, from: string, to: string) => {
+        // Refresh folders when a transfer happens involving this user
+        if (address && (from.toLowerCase() === address.toLowerCase() || to.toLowerCase() === address.toLowerCase())) {
+          loadUserFolders();
+        }
+      };
+
+      bundlContractUtils.listenForFolderTransfers(handleFolderTransfer);
+
+      return () => {
+        bundlContractUtils.stopListeningForFolderTransfers();
+      };
+    }
+  }, [isConnected, address]);
+
+  // Calculate total portfolio value
+  const calculatePortfolioValue = async () => {
+    if (!isConnected || !address || !currentChain) {
+      setPortfolioValue({ eth: '0', usd: '$0.00' });
+      return;
+    }
+
+    try {
+      // Get total ETH balance across all folders
+      const totalETH = await bundlContractUtils.getUserTotalETHBalance();
+      
+      // Get all token balances
+      const allTokens = await bundlContractUtils.getUserAllTokens();
+      
+      // Calculate total USD value
+      let totalUSDValue = 0;
+      
+      // Add ETH value
+      const ethPrice = await priceService.getPriceBySymbol('ETH');
+      const ethUSDValue = parseFloat(totalETH) * ethPrice;
+      totalUSDValue += ethUSDValue;
+      
+      // Add token values
+      for (const token of allTokens) {
+        // token.totalBalance is already formatted as a string, no need to format again
+        const balance = token.totalBalance;
+        const usdValue = await priceService.calculateUSDValue(
+          balance,
+          token.decimals,
+          token.symbol,
+          token.address === '0x0000000000000000000000000000000000000000' ? undefined : token.address,
+          currentChain.chain_id
+        );
+        totalUSDValue += parseFloat(usdValue.toString());
+      }
+      
+      setPortfolioValue({
+        eth: parseFloat(totalETH).toFixed(4),
+        usd: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(totalUSDValue)
+      });
+    } catch (error) {
+      console.error('Error calculating portfolio value:', error);
+      setPortfolioValue({ eth: '0', usd: '$0.00' });
+    }
+  };
+
+  // Update portfolio value when folders are loaded
+  useEffect(() => {
+    if (isConnected && address && currentChain) {
+      calculatePortfolioValue();
+    }
+  }, [items, isConnected, address, currentChain]);
+
+  const loadUserFolders = async () => {
+    try {
+      const blockchainFolders = await getUserFolders();
+      
+      if (currentChain) {
+        // Convert blockchain folders to UI format and fetch wallet addresses
+        const uiFolders: OrganizationItem[] = [];
+        for (const folder of blockchainFolders) {
+          try {
+            // Get the wallet address for this folder
+            const walletAddress = await bundlContractUtils.getFolderWallet(folder.tokenId);
+            uiFolders.push({
+              id: `folder-${folder.tokenId}`,
+              name: folder.name,
+              type: 'folder' as const,
+              parentId: null, // Root level folders for now
+              chainId: currentChain.chain_id,
+              modified: new Date(),
+              tokenId: folder.tokenId, // Store the blockchain token ID
+              walletAddress: walletAddress, // Store the wallet address
+            });
+          } catch (error) {
+            // If wallet fetch fails, still add folder without wallet address
+            uiFolders.push({
+              id: `folder-${folder.tokenId}`,
+              name: folder.name,
+              type: 'folder' as const,
+              parentId: null,
+              chainId: currentChain.chain_id,
+              modified: new Date(),
+              tokenId: folder.tokenId,
+              walletAddress: 'Loading...',
+            });
+          }
+        }
+
+        const allTokens: OrganizationItem[] = [];
+        for (const folder of blockchainFolders) {
+          try {
+            const folderTokens = await bundlContractUtils.getFolderTokens(folder.tokenId);
+            const uiTokens: OrganizationItem[] = await Promise.all(
+              folderTokens.map(async (token: any, index: number) => {
+                const balance = ethers.formatUnits(token.totalAmount, token.decimals);
+                const usdValue = await priceService.calculateUSDValue(
+                  balance,
+                  token.decimals,
+                  token.symbol,
+                  token.address === '0x0000000000000000000000000000000000000000' ? undefined : token.address,
+                  currentChain.chain_id
+                );
+
+                return {
+                  id: `token-${folder.tokenId}-${index}`,
+                  name: token.name,
+                  type: 'token' as const,
+                  parentId: `folder-${folder.tokenId}`,
+                  chainId: currentChain.chain_id,
+                  modified: new Date(),
+                  token: {
+                    id: `${token.symbol || token.name.toLowerCase()}-${currentChain.chain_id}`,
+                    name: token.name,
+                    symbol: token.symbol,
+                    address: token.address,
+                    decimals: token.decimals,
+                    balance,
+                    value: usdValue,
+                    chainId: currentChain.chain_id,
+                  },
+                };
+              })
+            );
+            allTokens.push(...uiTokens);
+          } catch (error) {
+          }
+        }
+
+        setItems(prevItems => {
+          const itemsFromOtherChains = prevItems.filter(item => item.chainId !== currentChain.chain_id);
+          return [...itemsFromOtherChains, ...uiFolders, ...allTokens];
+        });
+      }
+    } catch (error) {
+      if (currentChain) {
+        setItems(prevItems => prevItems.filter(item => item.chainId !== currentChain.chain_id));
+      }
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -193,27 +397,127 @@ export function FileSystemView() {
     }
   }
 
-  const handleCreateFolder = (name: string) => {
-    if (!currentChain) return
-
-    const newFolder: OrganizationItem = {
-      id: `folder-${Date.now()}`,
-      name,
-      type: 'folder',
-      parentId: currentPath.length > 0 ? currentPath[currentPath.length - 1] : null,
-      chainId: currentChain.chain_id,
-      modified: new Date(),
+  const handleCreateFolder = async (name: string) => {
+    // Check if wallet is connected first
+    if (!isConnected) {
+      try {
+        await connectWallet();
+      } catch (error) {
+        return;
+      }
     }
 
-    setItems(prevItems => [...prevItems, newFolder])
+    try {
+      // Create folder on blockchain
+      const result = await createFolderContract(name);
+      
+      if (result) {
+        // Reload folders from blockchain to get the real data
+        await loadUserFolders();
+        // Close the dialog after successful creation
+        setIsCreateFolderOpen(false);
+      }
+    } catch (error) {
+      // Handle error silently or show user-friendly message
+    }
   }
 
-  const handleSendFolder = (address: string) => {
+  const handleCreateToken = async (tokenData: {
+    type: 'existing' | 'tracked';
+    assetType?: 'erc20' | 'native';
+    name: string;
+    symbol?: string;
+    address?: string;
+    amount?: string;
+  }) => {
+    if (!selectedFolderForToken || !isConnected) {
+      return;
+    }
+
+    try {
+      let transactionHash = '';
+      
+      if (tokenData.type === 'existing' && tokenData.amount) {
+        if (tokenData.assetType === 'native') {
+          // Native ETH transfer
+          transactionHash = await bundlContractUtils.addNativeETHToFolder(
+            selectedFolderForToken.tokenId || 0,
+            tokenData.amount
+          );
+        } else if (tokenData.assetType === 'erc20' && tokenData.address) {
+          // ERC20 token transfer
+          transactionHash = await bundlContractUtils.addTokensToFolder(
+            selectedFolderForToken.tokenId || 0,
+            tokenData.address,
+            tokenData.amount
+          );
+        }
+      } else {
+        // Tracked token - no blockchain transaction
+        transactionHash = `tracked_${Date.now()}`;
+      }
+      
+      // Create token in UI
+      if (currentChain) {
+        const newToken: OrganizationItem = {
+          id: `token-${Date.now()}`,
+          name: tokenData.name,
+          type: 'token',
+          parentId: selectedFolderForToken.id,
+          chainId: currentChain.chain_id,
+          modified: new Date(),
+          // Add token-specific properties
+          token: {
+            id: `${tokenData.symbol || tokenData.name.toLowerCase()}-${currentChain.chain_id}`,
+            name: tokenData.name,
+            symbol: tokenData.symbol || tokenData.name.substring(0, 4).toUpperCase(),
+            address: tokenData.address || (tokenData.assetType === 'native' ? 'native' : '0x0000000000000000000000000000000000000000'),
+            decimals: tokenData.assetType === 'native' ? 18 : 18, // Default to 18, will be updated for ERC20
+            balance: tokenData.amount || '0',
+            value: '$0.00',
+            chainId: currentChain.chain_id,
+          },
+          transactionHash: transactionHash
+        };
+
+        setItems(prevItems => [...prevItems, newToken]);
+      }
+      
+      // Close the dialog after successful creation
+      setSelectedFolderForToken(null);
+      setIsCreateTokenOpen(false);
+    } catch (error) {
+      // Handle error silently or show user-friendly message
+    }
+  };
+
+  const handleSendFolder = async (address: string) => {
     if (selectedFolderForSend) {
-      // Here you would implement the actual sending logic
-      console.log(`Sending folder "${selectedFolderForSend.name}" to address: ${address}`)
-      // You could show a success toast or notification here
-      setSelectedFolderForSend(null)
+      try {
+        console.log('Selected folder for send:', selectedFolderForSend);
+        const tokenId = selectedFolderForSend.tokenId;
+        console.log('Token ID:', tokenId, 'Type:', typeof tokenId);
+        
+        if (!tokenId && tokenId !== 0) {
+          throw new Error('Invalid folder tokenId');
+        }
+        
+        // Transfer folder ownership (NFT) to the recipient
+        // This gives them access to the folder wallet and all its contents
+        console.log('Transferring folder ownership to:', address);
+        const result = await sendFolderContract(tokenId, address);
+        
+        if (result && result.success) {
+          console.log('Folder successfully transferred!');
+          // Refresh the folder list to show updated ownership
+          await loadUserFolders();
+          
+          setSelectedFolderForSend(null);
+          setIsSendFolderOpen(false);
+        }
+      } catch (error) {
+        console.error('Error sending folder:', error);
+      }
     }
   }
 
@@ -221,32 +525,9 @@ export function FileSystemView() {
     setIsCreateFolderOpen(true)
   }
 
-  const handleAddToken = () => {
-    setIsAddTokenOpen(true)
-  }
-
-  const handleConfirmAddToken = (tokenAddress: string, tokenName: string) => {
-    if (!currentChain) return
-
-    const newToken: OrganizationItem = {
-      id: `token-${Date.now()}`,
-      name: tokenName,
-      type: 'token',
-      parentId: currentPath.length > 0 ? currentPath[currentPath.length - 1] : null,
-      chainId: currentChain.chain_id,
-      modified: new Date(),
-      token: {
-        id: `token-${Date.now()}`,
-        name: tokenName,
-        symbol: tokenName.toUpperCase(),
-        address: tokenAddress,
-        decimals: 18, // Default decimals, could be fetched from contract
-        balance: '0',
-        chainId: currentChain.chain_id,
-      }
-    }
-
-    setItems(prevItems => [...prevItems, newToken])
+  const handleContextMenuCreateToken = (folder: OrganizationItem) => {
+    setSelectedFolderForToken(folder)
+    setIsCreateTokenOpen(true)
   }
 
   const handleContextMenuSendFolder = (folder: OrganizationItem) => {
@@ -300,24 +581,71 @@ export function FileSystemView() {
 
           {/* View Controls */}
           <div className='flex items-center space-x-2'>
-              <Button
+            {/* Portfolio Value Display */}
+            {isConnected && currentChain && (
+              <div className="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-md text-sm border border-blue-200">
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-blue-600 font-medium">Total Portfolio</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold">{portfolioValue.eth} ETH</span>
+                    <span className="text-blue-600">•</span>
+                    <span className="font-semibold">{portfolioValue.usd}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Wallet Connection Status */}
+            <div className="flex items-center space-x-2">
+              {!isConnected ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={connectWallet}
+                  disabled={loading}
+                  className="text-orange-500 border-orange-500 hover:bg-orange-50"
+                >
+                  {loading ? 'Connecting...' : 'Connect Wallet'}
+                </Button>
+              ) : (
+                <div className="flex items-center space-x-2 px-2 py-1 bg-green-50 text-green-700 rounded-md text-sm">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>{address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}</span>
+                </div>
+              )}
+              
+              {error && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={clearError}
+                  className="text-xs"
+                >
+                  {error} ✕
+                </Button>
+              )}
+            </div>
+
+            <Button
               size={'sm'}
-              onClick={currentPath.length > 0 ? handleAddToken : handleContextMenuCreateFolder}
-              >
-                {currentPath.length > 0 ? (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Token
-                  </>
-                ) : (
-                  <>
-                    <FolderPlus className="h-4 w-4 mr-2" />
-                    Create New Folder
-                  </>
-                )}
-              </Button>
+              onClick={handleContextMenuCreateFolder}
+              disabled={!isConnected}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Folder
+            </Button>
           
           <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={calculatePortfolioValue}
+              disabled={!isConnected}
+              className="border-border text-foreground hover:bg-secondary"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
               size="sm"
@@ -343,8 +671,6 @@ export function FileSystemView() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Wallet
-          />
           </div>
         </div>
 
@@ -391,6 +717,11 @@ export function FileSystemView() {
                                   Open Folder
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
+                                <ContextMenuItem onClick={() => handleContextMenuCreateToken(item)}>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Create Token
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
                                 <ContextMenuItem onClick={() => handleContextMenuSendFolder(item)}>
                                   <Send className="h-4 w-4 mr-2" />
                                   Send Folder
@@ -418,6 +749,11 @@ export function FileSystemView() {
                                 <ContextMenuItem onClick={() => handleDoubleClick(item)}>
                                   <Folder className="h-4 w-4 mr-2" />
                                   Open Folder
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem onClick={() => handleContextMenuCreateToken(item)}>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Create Token
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
                                 <ContextMenuItem onClick={() => handleContextMenuSendFolder(item)}>
@@ -467,17 +803,26 @@ export function FileSystemView() {
           </ContextMenuTrigger>
           {currentChain && (
             <ContextMenuContent>
-              {currentPath.length > 0 ? (
-                <ContextMenuItem onClick={handleAddToken}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Token
-                </ContextMenuItem>
-              ) : (
                 <ContextMenuItem onClick={handleContextMenuCreateFolder}>
                   <FolderPlus className="h-4 w-4 mr-2" />
                   Create New Folder
                 </ContextMenuItem>
-              )}
+                {currentPath.length > 0 && (
+                  <>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onClick={() => {
+                      // Find the current folder we're inside
+                      const currentFolderId = currentPath[currentPath.length - 1];
+                      const currentFolder = items.find(item => item.id === currentFolderId);
+                      if (currentFolder) {
+                        handleContextMenuCreateToken(currentFolder);
+                      }
+                    }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Token
+                    </ContextMenuItem>
+                  </>
+                )}
             </ContextMenuContent>
           )}
         </ContextMenu>
@@ -485,29 +830,32 @@ export function FileSystemView() {
 
       {/* Dialogs */}
       <CreateFolderDialog
-        isOpen={isCreateFolderOpen}
-        onClose={() => setIsCreateFolderOpen(false)}
+        open={isCreateFolderOpen}
+        onOpenChange={setIsCreateFolderOpen}
         onConfirm={handleCreateFolder}
+        loading={loading}
       />
-      
-      <AddTokenDialog
-        isOpen={isAddTokenOpen}
-        onClose={() => setIsAddTokenOpen(false)}
-        onConfirm={handleConfirmAddToken}
-        folderName={currentPath.length > 0 ? 
-          (items.find(item => item.id === currentPath[currentPath.length - 1])?.name || 'Current Folder') : 
-          'Root'
-        }
+
+      <CreateTokenDialog
+        open={isCreateTokenOpen}
+        onOpenChange={(open) => {
+          setIsCreateTokenOpen(open)
+          if (!open) setSelectedFolderForToken(null)
+        }}
+        folder={selectedFolderForToken}
+        onConfirm={handleCreateToken}
+        loading={loading}
       />
       
       <SendFolderDialog
-        isOpen={isSendFolderOpen}
-        onClose={() => {
-          setIsSendFolderOpen(false)
-          setSelectedFolderForSend(null)
+        open={isSendFolderOpen}
+        onOpenChange={(open) => {
+          setIsSendFolderOpen(open)
+          if (!open) setSelectedFolderForSend(null)
         }}
+        folder={selectedFolderForSend}
         onConfirm={handleSendFolder}
-        folderName={selectedFolderForSend?.name || ''}
+        loading={loading}
       />
     </div>
   )

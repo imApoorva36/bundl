@@ -139,7 +139,7 @@ const sampleData: OrganizationItem[] = [
 
 export function TokenOrganizerProvider({ children }: { children: React.ReactNode }) {
   const [supportedChains, setSupportedChains] = useState<Chain[]>([])
-  const [items, setItems] = useState<OrganizationItem[]>(sampleData)
+  const [items, setItems] = useState<OrganizationItem[]>([])
   const [currentChain, setCurrentChain] = useState<Chain | null>(null)
   const [currentPath, setCurrentPath] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('grid')

@@ -21,6 +21,10 @@ export interface OrganizationItem {
   children?: OrganizationItem[]
   // For tokens
   token?: Token
+  // Blockchain-related properties
+  tokenId?: number // NFT token ID for folders
+  walletAddress?: string // Smart wallet address for folders
+  transactionHash?: string // Creation transaction hash
 }
 
 export interface Chain {
