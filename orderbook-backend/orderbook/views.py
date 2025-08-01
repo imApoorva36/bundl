@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
-from .models import LimitOrder
+from .models import LimitOrder, Extension
 from .serializers import LimitOrderSerializer, CreateOrderSerializer
 
 class OrderPagination(PageNumberPagination):
@@ -16,27 +16,41 @@ def submit_order(request):
     """Submit a new limit order"""
     print(request.data)
     serializer = CreateOrderSerializer(data=request.data)
-    
+
     if not serializer.is_valid():
         return Response(
-            {'error': 'Invalid order data', 'details': serializer.errors}, 
+            {'error': 'Invalid order data', 'details': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     validated_data = serializer.validated_data
     order_data = validated_data['data']
-    
+
     # Check if order already exists
     if LimitOrder.objects.filter(order_hash=validated_data['orderHash']).exists():
         return Response(
-            {'error': 'Order already exists'}, 
+            {'error': 'Order already exists'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     # Extract network ID from request or default to 1 (mainnet)
     network_id = request.data.get('networkId', 1)
-    
-    # Create new order
+
+    # Extract extension data and create Extension instance
+    extension_data = order_data.get('extension', {})
+    extension = Extension.objects.create(
+        maker_asset_suffix=extension_data.get('makerAssetSuffix', ''),
+        taker_asset_suffix=extension_data.get('takerAssetSuffix', ''),
+        making_amount_data=extension_data.get('makingAmountData', ''),
+        taking_amount_data=extension_data.get('takingAmountData', ''),
+        predicate=extension_data.get('predicate', ''),
+        maker_permit=extension_data.get('makerPermit', ''),
+        pre_interaction=extension_data.get('preInteraction', ''),
+        post_interaction=extension_data.get('postInteraction', ''),
+        custom_data=extension_data.get('customData', '')
+    )
+
+    # Create new LimitOrder instance
     order = LimitOrder.objects.create(
         order_hash=validated_data['orderHash'],
         network_id=network_id,
@@ -45,14 +59,14 @@ def submit_order(request):
         making_amount=order_data['makingAmount'],
         taking_amount=order_data['takingAmount'],
         maker=order_data['maker'],
-        salt=order_data['salt'],
-        receiver=order_data['receiver'],
+        salt=order_data.get('salt', ''),
+        receiver=order_data.get('receiver', ''),
         maker_traits=order_data['makerTraits'],
-        extension=order_data['extension'],
+        extension=extension,
         signature=validated_data['signature'],
         status='ACTIVE'
     )
-    
+
     serializer = LimitOrderSerializer(order)
     return Response({
         'success': True,
