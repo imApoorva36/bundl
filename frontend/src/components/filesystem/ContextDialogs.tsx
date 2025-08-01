@@ -188,6 +188,7 @@ interface SendFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folder: OrganizationItem | null;
+  targetFolder?: OrganizationItem | null;
   onConfirm: (toAddress: string, action: 'transfer' | 'merge') => void;
   loading?: boolean;
 }
@@ -196,17 +197,36 @@ export function SendFolderDialog({
   open, 
   onOpenChange, 
   folder, 
+  targetFolder,
   onConfirm, 
   loading = false 
 }: SendFolderDialogProps) {
   const [toAddress, setToAddress] = useState('');
   const [action, setAction] = useState<'transfer' | 'merge'>('merge');
 
+  // Pre-fill target folder when provided via drag and drop
+  React.useEffect(() => {
+    if (targetFolder) {
+      setAction('merge');
+      const targetId = targetFolder.tokenId?.toString() || targetFolder.id.replace('folder-', '');
+      setToAddress(targetId);
+    }
+  }, [targetFolder]);
+
+  // Clear form when dialog is closed
+  React.useEffect(() => {
+    if (!open) {
+      setToAddress('');
+      setAction('merge');
+    }
+  }, [open]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (toAddress.trim()) {
       onConfirm(toAddress.trim(), action);
       setToAddress('');
+      setAction('merge'); // Reset to default
     }
   };
 
@@ -220,6 +240,11 @@ export function SendFolderDialog({
           <div className="mb-4">
             <p className="text-sm text-gray-600 mb-4">
               Choose how to send folder "{folder?.name}"
+              {targetFolder && (
+                <span className="block mt-1 text-green-600">
+                  Target folder "{targetFolder.name}"
+                </span>
+              )}
             </p>
             
             {/* Action Selection */}
@@ -263,11 +288,6 @@ export function SendFolderDialog({
                 placeholder={action === 'merge' ? 'Enter folder ID (e.g., 2)' : '0x...'}
                 disabled={loading}
               />
-              {action === 'merge' && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter the ID of another folder you own to merge assets into
-                </p>
-              )}
             </div>
           </div>
           <DialogFooter>

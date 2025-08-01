@@ -1,8 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { cn } from '@/lib/utils'
 import { OrganizationItem } from '@/types/filesystem'
 import Image from 'next/image'
@@ -122,11 +121,10 @@ export function FileItem({
   const {
     attributes,
     listeners,
-    setNodeRef,
+    setNodeRef: setDragRef,
     transform,
-    transition,
-    isDragging: sortableIsDragging,
-  } = useSortable({
+    isDragging: draggableIsDragging,
+  } = useDraggable({
     id: item.id,
     data: {
       type: item.type,
@@ -135,11 +133,28 @@ export function FileItem({
     }
   })
 
-  const isDragging = propIsDragging || sortableIsDragging
+  const {
+    setNodeRef: setDropRef,
+    isOver,
+  } = useDroppable({
+    id: item.id,
+    data: {
+      type: item.type,
+      name: item.name,
+      chainId: item.chainId,
+    }
+  })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  const isDragging = propIsDragging || draggableIsDragging
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined
+
+  // Combine refs
+  const setNodeRef = (node: HTMLElement | null) => {
+    setDragRef(node)
+    setDropRef(node)
   }
 
   const handleClick = (e: React.MouseEvent) => {
@@ -163,7 +178,8 @@ export function FileItem({
           "group p-4 rounded-lg border-2 border-transparent hover:border-primary cursor-pointer transition-all",
           "bg-card hover:bg-secondary",
           isSelected && "border-primary bg-primary/10",
-          isDragging && "opacity-50 scale-95"
+          isDragging && "opacity-50 scale-95",
+          isOver && item.type === 'folder' && "border-primary bg-secondary-foreground/50"
         )}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
@@ -212,7 +228,8 @@ export function FileItem({
         "flex items-center p-3 rounded-lg hover:bg-secondary cursor-pointer transition-all",
         "border-2 border-transparent hover:border-border",
         isSelected && "border-primary bg-primary/10",
-        isDragging && "opacity-50"
+        isDragging && "opacity-50",
+        isOver && item.type === 'folder' && "border-primary bg-secondary-foreground/50"
       )}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}

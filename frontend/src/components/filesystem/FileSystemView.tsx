@@ -12,11 +12,6 @@ import {
   useSensors,
   DragOverlay,
 } from '@dnd-kit/core'
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable'
 import { priceService } from '../../lib/priceService'
 import { 
   Grid3X3, 
@@ -90,6 +85,7 @@ export function FileSystemView() {
   const [isSendFolderOpen, setIsSendFolderOpen] = useState(false)
   const [selectedFolderForSend, setSelectedFolderForSend] = useState<OrganizationItem | null>(null)
   const [selectedFolderForToken, setSelectedFolderForToken] = useState<OrganizationItem | null>(null)
+  const [targetFolderForSend, setTargetFolderForSend] = useState<OrganizationItem | null>(null)
   const [portfolioValue, setPortfolioValue] = useState<{ eth: string; usd: string }>({ eth: '0', usd: '$0.00' })
 
   const [bundlContractUtils] = useState(() => new BundlContractUtils());
@@ -354,7 +350,13 @@ export function FileSystemView() {
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event
     const draggedItem = items.find(item => item.id === active.id)
-    setDraggedItem(draggedItem || null)
+    
+    // For folder-to-folder drags, don't show visual feedback
+    if (draggedItem?.type === 'folder') {
+      setDraggedItem(null)
+    } else {
+      setDraggedItem(draggedItem || null)
+    }
   }
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -366,6 +368,11 @@ export function FileSystemView() {
     const overItem = items.find(item => item.id === over.id)
     
     if (!activeItem || !overItem) return
+
+    // Prevent any visual feedback for folder-to-folder drags
+    if (activeItem.type === 'folder' && overItem.type === 'folder') {
+      return // Do nothing for folder-to-folder drags
+    }
 
     // Only allow tokens to be moved into folders
     if (activeItem.type === 'token' && overItem.type === 'folder') {
@@ -386,25 +393,17 @@ export function FileSystemView() {
 
     if (!over || active.id === over.id) return
 
-    const activeIndex = currentItems.findIndex(item => item.id === active.id)
-    const overIndex = currentItems.findIndex(item => item.id === over.id)
+    const activeItem = items.find(item => item.id === active.id)
+    const overItem = items.find(item => item.id === over.id)
 
-    if (activeIndex !== -1 && overIndex !== -1) {
-      const activeItem = currentItems[activeIndex]
-      const overItem = currentItems[overIndex]
+    if (!activeItem || !overItem) return
 
-      // Handle folder reorganization (only folders can be rearranged)
-      if (activeItem.type === 'folder' && overItem.type === 'folder') {
-        const newOrder = arrayMove(currentItems, activeIndex, overIndex)
-        
-        // Update the items array with new order
-        setItems(prevItems => {
-          const otherItems = prevItems.filter(item => 
-            !currentItems.some(currentItem => currentItem.id === item.id)
-          )
-          return [...otherItems, ...newOrder]
-        })
-      }
+    // Handle folder-to-folder drag - open send dialog
+    if (activeItem.type === 'folder' && overItem.type === 'folder') {
+      setSelectedFolderForSend(activeItem)
+      setTargetFolderForSend(overItem)
+      setIsSendFolderOpen(true)
+      return
     }
   }
 
@@ -562,6 +561,7 @@ export function FileSystemView() {
 
   const handleContextMenuSendFolder = (folder: OrganizationItem) => {
     setSelectedFolderForSend(folder)
+    setTargetFolderForSend(null) // Clear any previous target folder
     setIsSendFolderOpen(true)
   }
 
@@ -834,10 +834,6 @@ export function FileSystemView() {
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
               >
-                <SortableContext
-                  items={currentItems.map(item => item.id)}
-                  strategy={rectSortingStrategy}
-                >
                   {currentItems.length > 0 ? (
                     viewMode === 'grid' ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 auto-rows-max">
@@ -926,7 +922,6 @@ export function FileSystemView() {
                       </p>
                     </div>
                   )}
-                </SortableContext>
 
                 <DragOverlay>
                   {draggedItem ? (
@@ -993,9 +988,13 @@ export function FileSystemView() {
         open={isSendFolderOpen}
         onOpenChange={(open) => {
           setIsSendFolderOpen(open)
-          if (!open) setSelectedFolderForSend(null)
+          if (!open) {
+            setSelectedFolderForSend(null)
+            setTargetFolderForSend(null)
+          }
         }}
         folder={selectedFolderForSend}
+        targetFolder={targetFolderForSend}
         onConfirm={handleSendFolder}
         loading={loading}
       />
