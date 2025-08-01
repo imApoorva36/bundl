@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import LimitOrder
+from .models import LimitOrder, Extension
+
+@admin.register(Extension)
+class ExtensionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'maker_asset_suffix', 'taker_asset_suffix', 'predicate')
+    search_fields = ('maker_asset_suffix', 'taker_asset_suffix', 'predicate')
+
 
 @admin.register(LimitOrder)
 class LimitOrderAdmin(admin.ModelAdmin):
