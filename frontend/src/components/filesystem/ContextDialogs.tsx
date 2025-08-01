@@ -636,3 +636,123 @@ export function CreateTokenDialog({
     </Dialog>
   );
 }
+
+interface ScheduleSendDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  folder: OrganizationItem | null;
+  onConfirm: (receiverAddress: string, scheduleTime: string) => void;
+  loading?: boolean;
+}
+
+export function ScheduleSendDialog({ 
+  open, 
+  onOpenChange, 
+  folder, 
+  onConfirm, 
+  loading = false 
+}: ScheduleSendDialogProps) {
+  const [receiverAddress, setReceiverAddress] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+
+  // Clear form when dialog is closed
+  React.useEffect(() => {
+    if (!open) {
+      setReceiverAddress('');
+      setScheduleTime('');
+    }
+  }, [open]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (receiverAddress.trim() && scheduleTime.trim()) {
+      onConfirm(receiverAddress.trim(), scheduleTime.trim());
+      setReceiverAddress('');
+      setScheduleTime('');
+    }
+  };
+
+  // Generate minimum datetime (current time + 1 minute)
+  const getMinDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 1);
+    return now.toISOString().slice(0, 16);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Schedule Send</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="nft-id">NFT ID</Label>
+              <Input
+                id="nft-id"
+                value={folder?.tokenId?.toString() || folder?.id.replace('folder-', '') || ''}
+                disabled
+                className="bg-gray-50"
+              />
+            </div>
+
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="receiver-address">Receiver Address</Label>
+              <Input
+                id="receiver-address"
+                value={receiverAddress}
+                onChange={(e) => setReceiverAddress(e.target.value)}
+                placeholder="0x..."
+                disabled={loading}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the Ethereum address that will receive the folder
+              </p>
+            </div>
+
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="schedule-time">Schedule Time</Label>
+              <Input
+                id="schedule-time"
+                type="datetime-local"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                min={getMinDateTime()}
+                disabled={loading}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Select when the folder should be automatically sent
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={
+                !receiverAddress.trim() || 
+                !scheduleTime.trim() || 
+                loading ||
+                !receiverAddress.trim().startsWith('0x') || 
+                receiverAddress.trim().length !== 42
+              }
+            >
+              {loading ? 'Scheduling...' : 'Schedule Send'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -23,7 +23,8 @@ import {
   Send,
   Plus,
   RefreshCw,
-  Menu
+  Menu,
+  Clock
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -43,7 +44,7 @@ import { OrganizationItem, Token } from '@/types/filesystem'
 import { useFileSystem } from '@/contexts/FileSystemContext'
 import { FileItem } from './FileItem'
 import { FileSystemSidebar } from './FileSystemSidebar'
-import { CreateFolderDialog, SendFolderDialog, CreateTokenDialog } from './ContextDialogs'
+import { CreateFolderDialog, SendFolderDialog, CreateTokenDialog, ScheduleSendDialog } from './ContextDialogs'
 import { useBundlContracts } from '@/hooks/useBundlContracts'
 import { bundlContractUtils, BundlContractUtils } from '@/lib/contracts/BundlContractUtils'
 import Image from 'next/image'
@@ -83,7 +84,9 @@ export function FileSystemView() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [isCreateTokenOpen, setIsCreateTokenOpen] = useState(false)
   const [isSendFolderOpen, setIsSendFolderOpen] = useState(false)
+  const [isScheduleSendOpen, setIsScheduleSendOpen] = useState(false)
   const [selectedFolderForSend, setSelectedFolderForSend] = useState<OrganizationItem | null>(null)
+  const [selectedFolderForSchedule, setSelectedFolderForSchedule] = useState<OrganizationItem | null>(null)
   const [selectedFolderForToken, setSelectedFolderForToken] = useState<OrganizationItem | null>(null)
   const [targetFolderForSend, setTargetFolderForSend] = useState<OrganizationItem | null>(null)
   const [portfolioValue, setPortfolioValue] = useState<{ eth: string; usd: string }>({ eth: '0', usd: '$0.00' })
@@ -565,6 +568,22 @@ export function FileSystemView() {
     setIsSendFolderOpen(true)
   }
 
+  const handleContextMenuScheduleSend = (folder: OrganizationItem) => {
+    setSelectedFolderForSchedule(folder)
+    setIsScheduleSendOpen(true)
+  }
+
+  const handleScheduleSend = (receiverAddress: string, scheduleTime: string) => {
+    console.log('Schedule Send:', {
+      folder: selectedFolderForSchedule?.name,
+      tokenId: selectedFolderForSchedule?.tokenId,
+      receiverAddress,
+      scheduleTime
+    })
+    setIsScheduleSendOpen(false)
+    setSelectedFolderForSchedule(null)
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-background min-h-0 overflow-hidden">
       {/* Header */}
@@ -864,6 +883,11 @@ export function FileSystemView() {
                                   <Send className="h-4 w-4 mr-2" />
                                   Send Folder
                                 </ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem onClick={() => handleContextMenuScheduleSend(item)}>
+                                  <Clock className="h-4 w-4 mr-2" />
+                                  Schedule Send
+                                </ContextMenuItem>
                               </ContextMenuContent>
                             )}
                           </ContextMenu>
@@ -897,6 +921,10 @@ export function FileSystemView() {
                                 <ContextMenuItem onClick={() => handleContextMenuSendFolder(item)}>
                                   <Send className="h-4 w-4 mr-2" />
                                   Send Folder
+                                </ContextMenuItem>
+                                <ContextMenuItem onClick={() => handleContextMenuScheduleSend(item)}>
+                                  <Clock className="h-4 w-4 mr-2" />
+                                  Schedule Send
                                 </ContextMenuItem>
                               </ContextMenuContent>
                             )}
@@ -996,6 +1024,19 @@ export function FileSystemView() {
         folder={selectedFolderForSend}
         targetFolder={targetFolderForSend}
         onConfirm={handleSendFolder}
+        loading={loading}
+      />
+
+      <ScheduleSendDialog
+        open={isScheduleSendOpen}
+        onOpenChange={(open) => {
+          setIsScheduleSendOpen(open)
+          if (!open) {
+            setSelectedFolderForSchedule(null)
+          }
+        }}
+        folder={selectedFolderForSchedule}
+        onConfirm={handleScheduleSend}
         loading={loading}
       />
     </div>
