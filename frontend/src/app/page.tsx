@@ -1,29 +1,28 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
-import Link from "next/link"
+import BackgroundEffects from "@/components/landing/BackgroundEffects"
+import CTASection from "@/components/landing/CTASection"
+import FeaturesSection from "@/components/landing/FeaturesSection"
+import HeroSection from "@/components/landing/HeroSection"
+import InnovationSection from "@/components/landing/InnovationSection"
+import Navigation from "@/components/landing/Navigation"
+import { useEffect, useState } from "react"
 
 export default function Home() {
+  const [isLoaded, setIsLoaded] = useState(false)
 
-
+  useEffect(() => {
+    setIsLoaded(true)
+  }, [])
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-background via-primary/30">
-      <div className="text-center">
-        <Image
-          src="/bundl3.png"
-          alt="Logo"
-          width={450}
-          height={150}
-          className="mx-auto mb-4"
-        />
-        <Link href="/dashboard">
-          <Button>
-            Go to Dashboard
-          </Button>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      <BackgroundEffects isLoaded={isLoaded} />
+      <Navigation isLoaded={isLoaded} />
+      <HeroSection isLoaded={isLoaded} />
+      <FeaturesSection />
+      <InnovationSection />
+      <CTASection />
     </div>
   )
 }
