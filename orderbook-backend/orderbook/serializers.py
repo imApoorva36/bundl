@@ -1,13 +1,14 @@
 from rest_framework import serializers
 from .models import LimitOrder, Extension
 
-class ExtenstionSerializer(serializers.ModelSerializer):
+class ExtensionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Extension
-        fields = '__all__'
+        exclude = ('id',)
+
 
 class LimitOrderSerializer(serializers.ModelSerializer):
-    extension = ExtenstionSerializer()
+    extension = ExtensionSerializer()
     class Meta:
         model = LimitOrder
         fields = '__all__'
