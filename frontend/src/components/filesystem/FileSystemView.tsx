@@ -573,16 +573,43 @@ export function FileSystemView() {
     setIsScheduleSendOpen(true)
   }
 
-  const handleScheduleSend = (receiverAddress: string, scheduleTime: string) => {
-    console.log('Schedule Send:', {
-      folder: selectedFolderForSchedule?.name,
-      tokenId: selectedFolderForSchedule?.tokenId,
-      receiverAddress,
-      scheduleTime
-    })
-    setIsScheduleSendOpen(false)
-    setSelectedFolderForSchedule(null)
-  }
+  const handleScheduleSend = async (receiverAddress: string, scheduleTime: string) => {
+    const targetTime: Date = new Date(scheduleTime);
+    const now: Date = new Date();
+    const secondsUntilTarget: number = Math.floor((targetTime.getTime() - now.getTime()) / 1000);
+    console.log(scheduleTime)
+    try {
+      const response = await fetch('/api/create-limit-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nftTokenId: selectedFolderForSchedule?.tokenId,
+          receiver: receiverAddress,
+          scheduledAt: secondsUntilTarget
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Order created:', data);
+      
+      // Only close and reset if successful
+      setIsScheduleSendOpen(false);
+      setSelectedFolderForSchedule(null);
+      
+      // Optional: Show success message to user
+      // toast.success('Order created successfully!');
+      
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      
+      // Optional: Show error to user
+      // toast.error('Failed to create order');
+      
+      // Don't close the modal on error so user can retry
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-background min-h-0 overflow-hidden">
