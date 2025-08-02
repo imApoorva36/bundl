@@ -11,13 +11,14 @@ contract Predicate {
         uint256 tokenId,
         address expectedCurrentOwner,
         uint256 validAfter
-    ) external view returns (bool) {
-        if (block.timestamp < validAfter) return false;
+    ) external view returns (uint256) {
+        if (block.timestamp < validAfter) return 0;
 
         try IERC721(nftContract).ownerOf(tokenId) returns (address currentOwner) {
-            return currentOwner == expectedCurrentOwner;
+            if(currentOwner == expectedCurrentOwner) return 1;
+            else return 0;
         } catch {
-            return false;
+            return 0;
         }
     }
 }
