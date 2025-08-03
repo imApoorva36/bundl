@@ -12,7 +12,7 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 // Contract addresses
 const LIMIT_ORDER_CONTRACT = '0x7Fd0282c8D02be2a03A6c9e543B276c42e27e119';
 const ERC721_PROXY = '0x27460E998F915388eBAd2C1E5f102Fde1a6d0be1'
-const ERC721_TOKEN = '0x85030D65E81F2406b88Fe09a8b40C740f8167A81';
+const ERC721_TOKEN = process.env.NFT_CONTRACT_ADDRESS;
 
 // Your limit order data
 // const limitOrder = {
@@ -135,7 +135,7 @@ async function executeOrder() {
     console.log('\n2. Verifying ERC721 token ownership and approvals...');
     
     // The makerAssetSuffix contains the token ID - you may need to decode this based on your encoding
-    const tokenId = 1; // You'll need to extract this from the suffix
+    const tokenId = 8; 
     
     try {
         const owner = await erc721Contract.ownerOf(tokenId);
