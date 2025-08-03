@@ -61,6 +61,7 @@ _Architecture diagram coming soon_
 bundl extends the 1inch Limit Order Protocol with novel NFT portfolio transfer mechanisms and scheduled swap functionality:
 
 ### Custom Predicate for Scheduled Operations
+
 - **Time-Based Swap Execution**: Custom predicates that enable scheduled portfolio rebalancing
 - **Conditional Portfolio Transfers**: Execute NFT portfolio transfers based on specific conditions
 - **Automated Strategy Triggers**: Set future dates for portfolio operations and swaps
@@ -68,24 +69,28 @@ bundl extends the 1inch Limit Order Protocol with novel NFT portfolio transfer m
 - **Bot-Driven Execution**: Backend system monitors predicate conditions and triggers execution
 
 ### ERC721Proxy Integration
+
 - **NFT Portfolio Transfers via LOP**: Revolutionary integration allowing portfolio NFTs to be transferred through limit orders
 - **Seamless Portfolio Trading**: Use 1inch limit order infrastructure for portfolio NFT exchanges
 - **Cross-Protocol Compatibility**: Bridge NFT portfolios with DeFi trading mechanisms
 - **Secure Transfer Mechanisms**: Leverage limit order security for high-value portfolio transfers
 
 ### Maker Asset Suffix Security
+
 - **Intended Recipient Validation**: Maker asset suffix ensures only designated receivers can claim portfolio NFTs
 - **Anti-MEV Protection**: Prevent front-running and unauthorized portfolio claims
 - **Secure Portfolio Gifting**: Guarantee that portfolio gifts reach the correct recipient
 - **Permission-Based Transfers**: Advanced access control for portfolio NFT distribution
 
 ### OrderBook Backend & Automation
+
 - **Django-Powered Order Management**: Robust backend system for tracking limit orders and scheduled operations
 - **Automated Bot Execution**: Intelligent bot system that monitors conditions and executes scheduled swaps
 - **Order State Tracking**: Comprehensive order lifecycle management and status monitoring
 - **Real-Time Processing**: Continuous monitoring of market conditions and execution triggers
 
 ### Comprehensive 1inch API Utilization
+
 - **Swap Protocol Integration**: Full integration with 1inch swap APIs for portfolio rebalancing
 - **Price Feed Integration**: Real-time asset pricing for portfolio valuation and decisions
 - **Wallet Balance Tracking**: Monitor portfolio compositions across multiple tokens
@@ -153,12 +158,14 @@ NEXT_PUBLIC_ONEINCH_API_KEY=your_api_key_here
 ## Innovation Highlights
 
 ### 1inch Limit Order Protocol Innovation
+
 - **NFT Portfolio Transfers via LOP**: First implementation of ERC721 portfolio transfers through limit order protocol
 - **Custom Predicate Development**: Advanced scheduled swap execution extending 1inch LOP capabilities
 - **Maker Asset Suffix Security**: Novel security mechanism ensuring safe portfolio NFT transfers
 - **Scheduled Portfolio Operations**: Time-based portfolio management through custom predicates
 
 ### Novel DeFi Mechanisms
+
 - **Portfolio NFT Infrastructure**: Revolutionary system for bundling and transferring asset collections
 - **Cross-Protocol Portfolio Trading**: Bridge between NFT ownership and DeFi trading mechanisms
 - **Secure Portfolio Gifting**: Cryptographically secure system for sharing curated asset collections
@@ -166,7 +173,7 @@ NEXT_PUBLIC_ONEINCH_API_KEY=your_api_key_here
 
 ## Demo
 
-Experience bundl live: [https://bundl-demo.vercel.app](https://bundl-demo.vercel.app)
+Experience bundl live: [https://bundl-defi.vercel.app](https://bundl-defi.vercel.app)
 
 ## Contributing
 
