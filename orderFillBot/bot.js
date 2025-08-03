@@ -14,37 +14,6 @@ const LIMIT_ORDER_CONTRACT = '0x7Fd0282c8D02be2a03A6c9e543B276c42e27e119';
 const ERC721_PROXY = '0x27460E998F915388eBAd2C1E5f102Fde1a6d0be1'
 const ERC721_TOKEN = process.env.NFT_CONTRACT_ADDRESS;
 
-// Your limit order data
-// const limitOrder = {
-//     "id": 21,
-//       "extension": {
-//         "maker_asset_suffix": "0x",
-//         "taker_asset_suffix": "0x",
-//         "making_amount_data": "0x",
-//         "taking_amount_data": "0x",
-//         "predicate": "0xbf15fcd8000000000000000000000000eb2f26441508aec79b506f01420d7785570adf8b000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000842487bfd300000000000000000000000085030d65e81f2406b88fe09a8b40c740f8167a810000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aceaca97fbab5e83d26c5a4e20a561f79ed462ef00000000000000000000000000000000000000000000000000000000688dba7700000000000000000000000000000000000000000000000000000000",
-//         "maker_permit": "0x",
-//         "pre_interaction": "0x",
-//         "post_interaction": "0x",
-//         "custom_data": "0x"
-//       },
-//       "order_hash": "0x4cc2f49c887b08dea597a33cf4f607d8abc6ba3c07d836545310c7aa034ac0eb",
-//       "network_id": 84532,
-//       "maker_asset": "0x4200000000000000000000000000000000000006",
-//       "taker_asset": "0x4200000000000000000000000000000000000006",
-//       "making_amount": "1",
-//       "taking_amount": "1",
-//       "maker": "0xaceaca97fbab5e83d26c5a4e20a561f79ed462ef",
-//       "salt": "49597485551122474526056226565818051237638108494628890367556984222511798983209",
-//       "receiver": "0x0000000000000000000000000000000000000000",
-//       "maker_traits": "904625697166532776746648320833514010885515881993326945100556814646901735424",
-//       "signature": "0xbccd76f7007a66418b1b78e6fe75e0b83ed446170ed037a6b456459ca438f0305fa51d74edc45ecaa4b5dde13075361b8c356b2a1881f674dba280f9c5f255191b",
-//       "status": "ACTIVE",
-//       "created_at": "2025-08-02T07:11:56.271652Z",
-//       "updated_at": "2025-08-02T07:11:56.271965Z",
-//       "filled_amount": "0"
-//     };
-
 
 // Contract ABI (updated for proper structure)
 const limitOrderABI = [
@@ -62,25 +31,11 @@ const erc721ABI = [
     "function isApprovedForAll(address owner, address operator) external view returns (bool)"
 ];
 
-// Helper function to encode extension properly
-function encodeExtension(extension) {
-    const cleanHex = (hex) => {
-        const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-        return clean.length % 2 === 0 ? clean : '0' + clean;
-    };
-
-    const concatenated = 
-        cleanHex(extension.maker_asset_suffix) +
-        cleanHex(extension.taker_asset_suffix) +
-        cleanHex(extension.making_amount_data) +
-        cleanHex(extension.taking_amount_data) +
-        cleanHex(extension.predicate) +
-        cleanHex(extension.maker_permit) +
-        cleanHex(extension.pre_interaction) +
-        cleanHex(extension.post_interaction) +
-        cleanHex(extension.custom_data);
-
-    return '0x' + concatenated;
+function extractTokenIdFromMakerAssetSuffix(suffix) {
+    console.log(suffix)
+    const cleanSuffix = suffix.startsWith('0x') ? suffix.slice(2) : suffix;    
+    const tokenIdHex = cleanSuffix.substring(0, 64);
+    return parseInt(tokenIdHex, 16);
 }
 
 
@@ -101,6 +56,7 @@ async function executeOrder() {
         postInteraction: limitOrder.extension.post_interaction,
         customData: limitOrder.extension.custom_data
     });
+    const tokenId = extractTokenIdFromMakerAssetSuffix(limitOrder.extension.maker_asset_suffix);
 
     console.log('=== Order Execution Process ===\n');
 
@@ -133,10 +89,6 @@ async function executeOrder() {
 
     // Step 2: Verify ERC721 ownership and approvals
     console.log('\n2. Verifying ERC721 token ownership and approvals...');
-    
-    // The makerAssetSuffix contains the token ID - you may need to decode this based on your encoding
-    const tokenId = 8; 
-    
     try {
         const owner = await erc721Contract.ownerOf(tokenId);
         console.log('Token owner:', owner);
