@@ -184,49 +184,35 @@ export function RenameDialog({
   );
 }
 
-interface SendFolderDialogProps {
+interface GiftFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folder: OrganizationItem | null;
-  targetFolder?: OrganizationItem | null;
-  onConfirm: (toAddress: string, action: 'transfer' | 'merge') => void;
+  onConfirm: (receiverAddress: string) => void;
   loading?: boolean;
 }
 
-export function SendFolderDialog({ 
+export function GiftFolderDialog({ 
   open, 
   onOpenChange, 
   folder, 
-  targetFolder,
   onConfirm, 
   loading = false 
-}: SendFolderDialogProps) {
-  const [toAddress, setToAddress] = useState('');
-  const [action, setAction] = useState<'transfer' | 'merge'>('merge');
-
-  // Pre-fill target folder when provided via drag and drop
-  React.useEffect(() => {
-    if (targetFolder) {
-      setAction('merge');
-      const targetId = targetFolder.tokenId?.toString() || targetFolder.id.replace('folder-', '');
-      setToAddress(targetId);
-    }
-  }, [targetFolder]);
+}: GiftFolderDialogProps) {
+  const [receiverAddress, setReceiverAddress] = useState('');
 
   // Clear form when dialog is closed
   React.useEffect(() => {
     if (!open) {
-      setToAddress('');
-      setAction('merge');
+      setReceiverAddress('');
     }
   }, [open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (toAddress.trim()) {
-      onConfirm(toAddress.trim(), action);
-      setToAddress('');
-      setAction('merge'); // Reset to default
+    if (receiverAddress.trim()) {
+      onConfirm(receiverAddress.trim());
+      setReceiverAddress('');
     }
   };
 
@@ -234,63 +220,37 @@ export function SendFolderDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Send Folder Assets</DialogTitle>
+          <DialogTitle>Gift Folder</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <p className="text-sm text-gray-600 mb-4">
-              Choose how to send folder "{folder?.name}"
-              {targetFolder && (
-                <span className="block mt-1 text-green-600">
-                  Target folder "{targetFolder.name}"
-                </span>
-              )}
-            </p>
-            
-            {/* Action Selection */}
-            <div className="mb-4 space-y-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="merge"
-                  value="merge"
-                  checked={action === 'merge'}
-                  onChange={(e) => setAction(e.target.value as 'merge')}
-                  className="form-radio"
-                />
-                <label htmlFor="merge" className="text-sm">
-                  <strong>Merge Contents:</strong> Move all assets from this folder to another folder you own
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="transfer"
-                  value="transfer"
-                  checked={action === 'transfer'}
-                  onChange={(e) => setAction(e.target.value as 'transfer')}
-                  className="form-radio"
-                />
-                <label htmlFor="transfer" className="text-sm">
-                  <strong>Gift Folder:</strong> Transfer entire folder ownership (as NFT) to another address
-                </label>
-              </div>
-            </div>
-            
+          <div className="space-y-4">
             <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="to-address">
-                {action === 'merge' ? 'Target Folder ID' : 'Recipient Address'}
-              </Label>
+              <Label htmlFor="folder-name">Folder Name</Label>
               <Input
-                id="to-address"
-                value={toAddress}
-                onChange={(e) => setToAddress(e.target.value)}
-                placeholder={action === 'merge' ? 'Enter folder ID (e.g., 2)' : '0x...'}
-                disabled={loading}
+                id="folder-name"
+                value={folder?.name || ''}
+                disabled
+                className="bg-gray-50"
               />
             </div>
+
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="receiver-address">Receiver Address</Label>
+              <Input
+                id="receiver-address"
+                value={receiverAddress}
+                onChange={(e) => setReceiverAddress(e.target.value)}
+                placeholder="0x..."
+                disabled={loading}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the Ethereum address that will receive ownership of this folder
+              </p>
+            </div>
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="mt-6">
             <Button 
               type="button" 
               variant="outline" 
@@ -301,9 +261,117 @@ export function SendFolderDialog({
             </Button>
             <Button 
               type="submit" 
-              disabled={!toAddress.trim() || loading}
+              disabled={
+                !receiverAddress.trim() || 
+                loading ||
+                !receiverAddress.trim().startsWith('0x') || 
+                receiverAddress.trim().length !== 42
+              }
             >
-              {loading ? 'Processing...' : (action === 'merge' ? 'Merge Assets' : 'Gift Folder')}
+              {loading ? 'Gifting...' : 'Gift Folder'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface MergeFolderDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  folder: OrganizationItem | null;
+  targetFolder?: OrganizationItem | null;
+  onConfirm: (targetFolderId: string) => void;
+  loading?: boolean;
+}
+
+export function MergeFolderDialog({ 
+  open, 
+  onOpenChange, 
+  folder, 
+  targetFolder,
+  onConfirm, 
+  loading = false 
+}: MergeFolderDialogProps) {
+  const [targetFolderId, setTargetFolderId] = useState('');
+
+  // Pre-fill target folder when provided via drag and drop
+  React.useEffect(() => {
+    if (targetFolder) {
+      const targetId = targetFolder.tokenId?.toString() || targetFolder.id.replace('folder-', '');
+      setTargetFolderId(targetId);
+    }
+  }, [targetFolder]);
+
+  // Clear form when dialog is closed
+  React.useEffect(() => {
+    if (!open) {
+      setTargetFolderId('');
+    }
+  }, [open]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (targetFolderId.trim()) {
+      onConfirm(targetFolderId.trim());
+      setTargetFolderId('');
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Merge Folder Contents</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="source-folder">Source Folder</Label>
+              <Input
+                id="source-folder"
+                value={folder?.name || ''}
+                disabled
+                className="bg-gray-50"
+              />
+              {targetFolder && (
+                <p className="text-xs text-green-600">
+                  Target folder: "{targetFolder.name}"
+                </p>
+              )}
+            </div>
+
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="target-folder-id">Target Folder ID</Label>
+              <Input
+                id="target-folder-id"
+                value={targetFolderId}
+                onChange={(e) => setTargetFolderId(e.target.value)}
+                placeholder="Enter folder ID (e.g., 2)"
+                disabled={loading}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the ID of the folder where contents should be merged
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={!targetFolderId.trim() || loading}
+            >
+              {loading ? 'Merging...' : 'Merge Contents'}
             </Button>
           </DialogFooter>
         </form>

@@ -11,6 +11,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ChartDialog } from './ChartDialog'
 
 interface TokenItemProps {
   item: OrganizationItem
@@ -118,6 +119,8 @@ export function FileItem({
   onDoubleClick,
   isDragging: propIsDragging
 }: TokenItemProps) {
+  const [isChartDialogOpen, setIsChartDialogOpen] = useState(false)
+  
   const {
     attributes,
     listeners,
@@ -159,16 +162,25 @@ export function FileItem({
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    onSelect(item.id, e.ctrlKey || e.metaKey)
+    if (item.type === 'token') {
+      // Open chart dialog for tokens
+      setIsChartDialogOpen(true)
+    } else {
+      // For folders, use the existing selection logic
+      onSelect(item.id, e.ctrlKey || e.metaKey)
+    }
   }
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    onDoubleClick(item)
+    if (item.type === 'folder') {
+      // Only folders can be double-clicked to navigate
+      onDoubleClick(item)
+    }
   }
 
   if (viewMode === 'grid') {
-    return (
+    const gridElement = (
       <div
         ref={setNodeRef}
         style={style}
@@ -215,10 +227,21 @@ export function FileItem({
           </div>
         </div>
       </div>
-    )
+    );
+
+    return (
+      <>
+        {gridElement}
+        <ChartDialog
+          open={isChartDialogOpen}
+          onOpenChange={setIsChartDialogOpen}
+          token={item.type === 'token' ? item : null}
+        />
+      </>
+    );
   }
 
-  return (
+  const listElement = (
     <div
       ref={setNodeRef}
       style={style}
@@ -271,5 +294,16 @@ export function FileItem({
         )}
       </div>
     </div>
-  )
+  );
+
+  return (
+    <>
+      {listElement}
+      <ChartDialog
+        open={isChartDialogOpen}
+        onOpenChange={setIsChartDialogOpen}
+        token={item.type === 'token' ? item : null}
+      />
+    </>
+  );
 }

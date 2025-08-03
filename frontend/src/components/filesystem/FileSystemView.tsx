@@ -24,7 +24,8 @@ import {
   Plus,
   RefreshCw,
   Menu,
-  Clock
+  Clock,
+  ArrowRight
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -44,7 +45,7 @@ import { OrganizationItem, Token } from '@/types/filesystem'
 import { useFileSystem } from '@/contexts/FileSystemContext'
 import { FileItem } from './FileItem'
 import { FileSystemSidebar } from './FileSystemSidebar'
-import { CreateFolderDialog, SendFolderDialog, CreateTokenDialog, ScheduleSendDialog } from './ContextDialogs'
+import { CreateFolderDialog, GiftFolderDialog, MergeFolderDialog, CreateTokenDialog, ScheduleSendDialog } from './ContextDialogs'
 import { useBundlContracts } from '@/hooks/useBundlContracts'
 import { bundlContractUtils, BundlContractUtils } from '@/lib/contracts/BundlContractUtils'
 import Image from 'next/image'
@@ -83,12 +84,14 @@ export function FileSystemView() {
   const [draggedItem, setDraggedItem] = React.useState<OrganizationItem | null>(null)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [isCreateTokenOpen, setIsCreateTokenOpen] = useState(false)
-  const [isSendFolderOpen, setIsSendFolderOpen] = useState(false)
+  const [isGiftFolderOpen, setIsGiftFolderOpen] = useState(false)
+  const [isMergeFolderOpen, setIsMergeFolderOpen] = useState(false)
   const [isScheduleSendOpen, setIsScheduleSendOpen] = useState(false)
-  const [selectedFolderForSend, setSelectedFolderForSend] = useState<OrganizationItem | null>(null)
+  const [selectedFolderForGift, setSelectedFolderForGift] = useState<OrganizationItem | null>(null)
+  const [selectedFolderForMerge, setSelectedFolderForMerge] = useState<OrganizationItem | null>(null)
   const [selectedFolderForSchedule, setSelectedFolderForSchedule] = useState<OrganizationItem | null>(null)
   const [selectedFolderForToken, setSelectedFolderForToken] = useState<OrganizationItem | null>(null)
-  const [targetFolderForSend, setTargetFolderForSend] = useState<OrganizationItem | null>(null)
+  const [targetFolderForMerge, setTargetFolderForMerge] = useState<OrganizationItem | null>(null)
   const [portfolioValue, setPortfolioValue] = useState<{ eth: string; usd: string }>({ eth: '0', usd: '$0.00' })
 
   const [bundlContractUtils] = useState(() => new BundlContractUtils());
@@ -401,11 +404,11 @@ export function FileSystemView() {
 
     if (!activeItem || !overItem) return
 
-    // Handle folder-to-folder drag - open send dialog
+    // Handle folder-to-folder drag - open merge dialog
     if (activeItem.type === 'folder' && overItem.type === 'folder') {
-      setSelectedFolderForSend(activeItem)
-      setTargetFolderForSend(overItem)
-      setIsSendFolderOpen(true)
+      setSelectedFolderForMerge(activeItem)
+      setTargetFolderForMerge(overItem)
+      setIsMergeFolderOpen(true)
       return
     }
   }
@@ -504,51 +507,65 @@ export function FileSystemView() {
     }
   };
 
-  const handleSendFolder = async (targetInput: string, action: 'transfer' | 'merge') => {
-    if (selectedFolderForSend) {
+  const handleGiftFolder = async (receiverAddress: string) => {
+    if (selectedFolderForGift) {
       try {
-        console.log('Selected folder for send:', selectedFolderForSend);
-        const fromTokenId = selectedFolderForSend.tokenId;
+        console.log('Selected folder for gift:', selectedFolderForGift);
+        const fromTokenId = selectedFolderForGift.tokenId;
         console.log('Token ID:', fromTokenId, 'Type:', typeof fromTokenId);
         
         if (!fromTokenId && fromTokenId !== 0) {
           throw new Error('Invalid folder tokenId');
         }
         
-        if (action === 'merge') {
-          // Merge contents into another folder
-          const toTokenId = parseInt(targetInput);
-          if (isNaN(toTokenId)) {
-            throw new Error('Invalid target folder ID');
-          }
+        // Transfer folder ownership (NFT) to the recipient address
+        console.log('Transferring folder ownership to:', receiverAddress);
+        const result = await sendFolderContract(fromTokenId, receiverAddress);
+        
+        if (result && result.success) {
+          console.log('Folder successfully transferred!');
+          // Refresh the folder list to show updated ownership
+          await loadUserFolders();
           
-          console.log('Merging folder contents from:', fromTokenId, 'to:', toTokenId);
-          const result = await mergeFolderContents(fromTokenId, toTokenId);
-          
-          if (result && result.success) {
-            console.log('Folder contents successfully merged!');
-            // Refresh the folder list to show updated contents
-            await loadUserFolders();
-            
-            setSelectedFolderForSend(null);
-            setIsSendFolderOpen(false);
-          }
-        } else {
-          // Transfer folder ownership (NFT) to the recipient address
-          console.log('Transferring folder ownership to:', targetInput);
-          const result = await sendFolderContract(fromTokenId, targetInput);
-          
-          if (result && result.success) {
-            console.log('Folder successfully transferred!');
-            // Refresh the folder list to show updated ownership
-            await loadUserFolders();
-            
-            setSelectedFolderForSend(null);
-            setIsSendFolderOpen(false);
-          }
+          setSelectedFolderForGift(null);
+          setIsGiftFolderOpen(false);
         }
       } catch (error) {
-        console.error('Error with folder operation:', error);
+        console.error('Error with folder gift:', error);
+      }
+    }
+  }
+
+  const handleMergeFolder = async (targetFolderId: string) => {
+    if (selectedFolderForMerge) {
+      try {
+        console.log('Selected folder for merge:', selectedFolderForMerge);
+        const fromTokenId = selectedFolderForMerge.tokenId;
+        console.log('Token ID:', fromTokenId, 'Type:', typeof fromTokenId);
+        
+        if (!fromTokenId && fromTokenId !== 0) {
+          throw new Error('Invalid folder tokenId');
+        }
+        
+        // Merge contents into another folder
+        const toTokenId = parseInt(targetFolderId);
+        if (isNaN(toTokenId)) {
+          throw new Error('Invalid target folder ID');
+        }
+        
+        console.log('Merging folder contents from:', fromTokenId, 'to:', toTokenId);
+        const result = await mergeFolderContents(fromTokenId, toTokenId);
+        
+        if (result && result.success) {
+          console.log('Folder contents successfully merged!');
+          // Refresh the folder list to show updated contents
+          await loadUserFolders();
+          
+          setSelectedFolderForMerge(null);
+          setIsMergeFolderOpen(false);
+        }
+      } catch (error) {
+        console.error('Error with folder merge:', error);
       }
     }
   }
@@ -562,10 +579,15 @@ export function FileSystemView() {
     setIsCreateTokenOpen(true)
   }
 
-  const handleContextMenuSendFolder = (folder: OrganizationItem) => {
-    setSelectedFolderForSend(folder)
-    setTargetFolderForSend(null) // Clear any previous target folder
-    setIsSendFolderOpen(true)
+  const handleContextMenuGiftFolder = (folder: OrganizationItem) => {
+    setSelectedFolderForGift(folder)
+    setIsGiftFolderOpen(true)
+  }
+
+  const handleContextMenuMergeFolder = (folder: OrganizationItem) => {
+    setSelectedFolderForMerge(folder)
+    setTargetFolderForMerge(null) // Clear any previous target folder
+    setIsMergeFolderOpen(true)
   }
 
   const handleContextMenuScheduleSend = (folder: OrganizationItem) => {
@@ -906,9 +928,14 @@ export function FileSystemView() {
                                   Create Token
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
-                                <ContextMenuItem onClick={() => handleContextMenuSendFolder(item)}>
+                                <ContextMenuItem onClick={() => handleContextMenuGiftFolder(item)}>
                                   <Send className="h-4 w-4 mr-2" />
-                                  Send Folder
+                                  Gift Folder
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem onClick={() => handleContextMenuMergeFolder(item)}>
+                                  <ArrowRight className="h-4 w-4 mr-2" />
+                                  Merge Contents
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
                                 <ContextMenuItem onClick={() => handleContextMenuScheduleSend(item)}>
@@ -945,10 +972,16 @@ export function FileSystemView() {
                                   Create Token
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
-                                <ContextMenuItem onClick={() => handleContextMenuSendFolder(item)}>
+                                <ContextMenuItem onClick={() => handleContextMenuGiftFolder(item)}>
                                   <Send className="h-4 w-4 mr-2" />
-                                  Send Folder
+                                  Gift Folder
                                 </ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem onClick={() => handleContextMenuMergeFolder(item)}>
+                                  <ArrowRight className="h-4 w-4 mr-2" />
+                                  Merge Contents
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
                                 <ContextMenuItem onClick={() => handleContextMenuScheduleSend(item)}>
                                   <Clock className="h-4 w-4 mr-2" />
                                   Schedule Send
@@ -1039,18 +1072,31 @@ export function FileSystemView() {
         loading={loading}
       />
       
-      <SendFolderDialog
-        open={isSendFolderOpen}
-        onOpenChange={(open) => {
-          setIsSendFolderOpen(open)
+      <GiftFolderDialog
+        open={isGiftFolderOpen}
+        onOpenChange={(open: boolean) => {
+          setIsGiftFolderOpen(open)
           if (!open) {
-            setSelectedFolderForSend(null)
-            setTargetFolderForSend(null)
+            setSelectedFolderForGift(null)
           }
         }}
-        folder={selectedFolderForSend}
-        targetFolder={targetFolderForSend}
-        onConfirm={handleSendFolder}
+        folder={selectedFolderForGift}
+        onConfirm={handleGiftFolder}
+        loading={loading}
+      />
+
+      <MergeFolderDialog
+        open={isMergeFolderOpen}
+        onOpenChange={(open: boolean) => {
+          setIsMergeFolderOpen(open)
+          if (!open) {
+            setSelectedFolderForMerge(null)
+            setTargetFolderForMerge(null)
+          }
+        }}
+        folder={selectedFolderForMerge}
+        targetFolder={targetFolderForMerge}
+        onConfirm={handleMergeFolder}
         loading={loading}
       />
 

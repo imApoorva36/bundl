@@ -220,3 +220,7 @@ html {
 .animate-subtle-pulse {
   animation: subtlePulse 4s ease-in-out infinite;
 }
+
+nextjs-portal {
+  display: none;
+}
