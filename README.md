@@ -36,7 +36,7 @@ bundl transforms how users manage and trade cryptocurrency portfolios by introdu
 
 ## Architecture
 
-_Architecture diagram coming soon_
+![bundl Architecture](frontend/public/diagram.jpeg)
 
 ### Core Components
 
