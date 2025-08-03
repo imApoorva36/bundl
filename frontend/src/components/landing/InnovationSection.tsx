@@ -5,19 +5,19 @@ import { Sparkles, Target, Clock, BarChart3, RefreshCw, Shield, Code, Zap } from
 
 const innovations = [
   {
-    title: "Custom Predicate Logic",
-    description: "Execute orders based on portfolio composition, performance thresholds, and multi-asset strategies with our advanced conditional logic system.",
-    features: ["Portfolio-based conditions", "Performance triggers", "Multi-asset logic", "Time-based execution"]
+    title: "Custom Predicate for Scheduled Operations",
+    description: "Time-based swap execution, conditional portfolio transfers, and automated strategy triggers with bot-driven execution monitoring.",
+    features: ["Scheduled portfolio swaps", "Time-based conditions", "Multi-step coordination", "Bot monitoring"]
   },
   {
-    title: "Automated Order Management",
-    description: "Our sophisticated bot system monitors and executes orders every hour, providing intelligent matching and real-time monitoring capabilities.",
-    features: ["Hourly execution cycles", "Smart order matching", "Real-time monitoring", "Automatic retry logic"]
+    title: "ERC721Proxy Integration",
+    description: "Revolutionary NFT portfolio transfers via 1inch Limit Order Protocol, enabling seamless portfolio trading through limit order infrastructure.",
+    features: ["NFT transfers via LOP", "Portfolio trading", "Cross-protocol compatibility", "Secure mechanisms"]
   },
   {
-    title: "Advanced Trading Strategies",
-    description: "Implement portfolio rebalancing, TWAP execution, dollar-cost averaging, and conditional swapping with institutional-grade precision.",
-    features: ["Portfolio rebalancing", "TWAP implementation", "DCA strategies", "Conditional swapping"]
+    title: "Maker Asset Suffix Security",
+    description: "Advanced security ensuring only intended recipients can claim portfolio NFTs, with anti-MEV protection and permission-based transfers.",
+    features: ["Recipient validation", "Anti-MEV protection", "Secure gifting", "Access control"]
   }
 ]
 
@@ -35,8 +35,8 @@ export default function InnovationSection() {
             Extending the Limit Order Protocol
           </h2>
           <p className="text-xl text-muted-foreground max-w-4xl mx-auto">
-            bundl significantly expands the 1inch Limit Order Protocol with innovative portfolio-centric features, 
-            automated execution infrastructure, and sophisticated trading strategies that revolutionize DeFi portfolio management.
+            bundl extends the 1inch Limit Order Protocol with novel NFT portfolio transfer mechanisms, custom predicates for scheduled operations, 
+            and comprehensive API integration that revolutionizes how users manage and trade crypto portfolios.
           </p>
         </div>
 

@@ -12,37 +12,37 @@ const features = [
   },
   {
     icon: Zap,
-    title: "Advanced Trading",
-    description: "Leverage 1inch integration with custom predicates for sophisticated trading strategies and automated execution with minimal slippage.",
-    benefits: ["1inch integration", "Custom predicates", "Low slippage"],
+    title: "1inch LOP Extensions",
+    description: "Custom predicates for scheduled swaps, ERC721Proxy for NFT transfers via limit orders, and maker asset suffix for secure recipient validation.",
+    benefits: ["Custom predicates", "ERC721Proxy integration", "Secure transfers"],
     delay: "0.1s"
   },
   {
     icon: Gift,
-    title: "Social Gifting",
-    description: "Send entire portfolio collections as NFT gifts. Share curated asset bundles with friends and family in a single transaction.",
-    benefits: ["One-click gifting", "Portfolio sharing", "Social features"],
+    title: "Secure Portfolio Gifting",
+    description: "Send entire portfolio collections as NFT gifts with maker asset suffix ensuring only intended recipients can claim your curated bundles.",
+    benefits: ["Secure gifting", "Portfolio sharing", "Anti-MEV protection"],
     delay: "0.2s"
   },
   {
     icon: Shield,
-    title: "Secure & Transparent",
-    description: "On-chain metadata ensures complete transparency. Maintain full control over your assets with provable ownership and audit trails.",
-    benefits: ["On-chain metadata", "Audit trails", "Provable ownership"],
+    title: "Automated Execution",
+    description: "Django-powered orderbook backend with intelligent bot system that monitors conditions and executes scheduled portfolio operations.",
+    benefits: ["Order management", "Bot execution", "Real-time monitoring"],
     delay: "0.3s"
   },
   {
     icon: Wallet,
-    title: "Token-Bound Accounts",
-    description: "Each portfolio NFT has its own wallet address powered by ERC-6551, enabling direct asset transfers and management.",
-    benefits: ["ERC-6551 standard", "Direct transfers", "Intuitive UI"],
+    title: "Token-Bound Portfolios",
+    description: "Each portfolio NFT has its own wallet address, enabling direct asset transfers and seamless integration with DeFi protocols.",
+    benefits: ["Token-bound accounts", "Direct transfers", "DeFi integration"],
     delay: "0.6s"
   },
   {
     icon: Bot,
-    title: "Automated Execution",
-    description: "Our sophisticated bot system monitors market conditions and executes orders with intelligent matching algorithms.",
-    benefits: ["Periodic execution", "Smart matching", "Market monitoring"],
+    title: "Comprehensive 1inch APIs",
+    description: "Full integration with 1inch swap, price feeds, and balance APIs for optimal routing and real-time portfolio valuation.",
+    benefits: ["Swap integration", "Price feeds", "Balance tracking"],
     delay: "0.7s"
   }
 ]

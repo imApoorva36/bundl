@@ -21,11 +21,11 @@ bundl transforms how users manage and trade cryptocurrency portfolios by introdu
 
 ### Advanced Trading & Swapping
 
-- **1inch Integration**: Seamless token swapping within portfolio folders using 1inch APIs
-- **Extended Limit Order Protocol**: Custom predicates and advanced order strategies built on 1inch LOP
-- **Automated Order Execution**: Smart bot system that monitors and executes limit orders every hour
-- **Portfolio-Based Conditional Orders**: Place orders based on entire portfolio composition and performance
-- **Custom Trading Strategies**: TWAP, DCA, and rebalancing strategies with automated execution
+- **1inch API Integration**: Comprehensive use of 1inch swap, price feeds, and wallet balance APIs
+- **Custom Predicate Contracts**: Scheduled swap execution through extended 1inch Limit Order Protocol
+- **ERC721Proxy Integration**: Enable NFT portfolio transfers through limit order mechanisms
+- **Secure Asset Transfers**: Maker asset suffix implementation ensuring only intended receivers get NFTs
+- **Scheduled Portfolio Operations**: Time-based portfolio rebalancing and asset management
 
 ### Social & Gifting Features
 
@@ -42,10 +42,12 @@ _Architecture diagram coming soon_
 
 - **BundlCore**: Main contract managing portfolio NFTs and metadata
 - **BundlRegistry**: Registry for token-bound accounts enabling portfolio wallets
-- **BundlExecutor**: Execution logic for portfolio operations and automated strategies
-- **Custom Predicate Contracts**: Extended 1inch LOP logic for portfolio-based conditional trading
-- **OrderBook Backend**: Django API with automated bot for order management and execution
-- **Hourly Execution Bot**: Automated system for monitoring and executing limit orders
+- **BundlExecutor**: Execution logic for portfolio operations and swap coordination
+- **Custom Predicate Contracts**: Extended 1inch LOP logic for scheduled swaps and time-based operations
+- **ERC721Proxy**: Specialized contract enabling NFT portfolio transfers through limit orders
+- **Maker Asset Suffix System**: Security layer ensuring only intended recipients receive portfolio NFTs
+- **OrderBook Backend**: Django API for order management, indexing, and bot coordination
+- **Automated Execution Bot**: System that monitors and executes scheduled portfolio operations
 
 ## Technology Stack
 
@@ -56,28 +58,38 @@ _Architecture diagram coming soon_
 
 ## 1inch Limit Order Protocol Extensions
 
-bundl significantly expands the 1inch Limit Order Protocol with innovative portfolio-centric features:
+bundl extends the 1inch Limit Order Protocol with novel NFT portfolio transfer mechanisms and scheduled swap functionality:
 
-### Custom Predicate Logic
+### Custom Predicate for Scheduled Operations
+- **Time-Based Swap Execution**: Custom predicates that enable scheduled portfolio rebalancing
+- **Conditional Portfolio Transfers**: Execute NFT portfolio transfers based on specific conditions
+- **Automated Strategy Triggers**: Set future dates for portfolio operations and swaps
+- **Multi-Step Transaction Coordination**: Orchestrate complex portfolio operations through predicates
+- **Bot-Driven Execution**: Backend system monitors predicate conditions and triggers execution
 
-- **Portfolio Composition Predicates**: Orders that execute based on portfolio asset ratios
-- **Performance-Based Triggers**: Conditional orders based on portfolio value thresholds
-- **Multi-Asset Strategies**: Complex orders involving multiple tokens within a portfolio
-- **Time-Based Conditions**: Scheduled rebalancing and strategy execution
+### ERC721Proxy Integration
+- **NFT Portfolio Transfers via LOP**: Revolutionary integration allowing portfolio NFTs to be transferred through limit orders
+- **Seamless Portfolio Trading**: Use 1inch limit order infrastructure for portfolio NFT exchanges
+- **Cross-Protocol Compatibility**: Bridge NFT portfolios with DeFi trading mechanisms
+- **Secure Transfer Mechanisms**: Leverage limit order security for high-value portfolio transfers
 
-### Automated Order Management System
+### Maker Asset Suffix Security
+- **Intended Recipient Validation**: Maker asset suffix ensures only designated receivers can claim portfolio NFTs
+- **Anti-MEV Protection**: Prevent front-running and unauthorized portfolio claims
+- **Secure Portfolio Gifting**: Guarantee that portfolio gifts reach the correct recipient
+- **Permission-Based Transfers**: Advanced access control for portfolio NFT distribution
 
-- **Hourly Bot Execution**: Automated system that monitors and executes orders every hour
-- **Smart Order Matching**: Intelligent matching of portfolio-based limit orders
-- **Strategy Automation**: Hands-off portfolio management through predefined rules
-- **Real-Time Monitoring**: Continuous tracking of market conditions and order status
+### OrderBook Backend & Automation
+- **Django-Powered Order Management**: Robust backend system for tracking limit orders and scheduled operations
+- **Automated Bot Execution**: Intelligent bot system that monitors conditions and executes scheduled swaps
+- **Order State Tracking**: Comprehensive order lifecycle management and status monitoring
+- **Real-Time Processing**: Continuous monitoring of market conditions and execution triggers
 
-### Advanced Trading Strategies
-
-- **Portfolio Rebalancing**: Automated maintenance of target asset allocations
-- **TWAP Implementation**: Time-weighted average price execution for large orders
-- **Dollar-Cost Averaging**: Scheduled recurring purchases with limit order precision
-- **Conditional Swapping**: Execute trades only when portfolio conditions are met
+### Comprehensive 1inch API Utilization
+- **Swap Protocol Integration**: Full integration with 1inch swap APIs for portfolio rebalancing
+- **Price Feed Integration**: Real-time asset pricing for portfolio valuation and decisions
+- **Wallet Balance Tracking**: Monitor portfolio compositions across multiple tokens
+- **Transaction Optimization**: Use 1inch routing for optimal swap execution within portfolios
 
 ## Getting Started
 
@@ -140,19 +152,17 @@ NEXT_PUBLIC_ONEINCH_API_KEY=your_api_key_here
 
 ## Innovation Highlights
 
-### 1inch Limit Order Protocol Expansion
+### 1inch Limit Order Protocol Innovation
+- **NFT Portfolio Transfers via LOP**: First implementation of ERC721 portfolio transfers through limit order protocol
+- **Custom Predicate Development**: Advanced scheduled swap execution extending 1inch LOP capabilities
+- **Maker Asset Suffix Security**: Novel security mechanism ensuring safe portfolio NFT transfers
+- **Scheduled Portfolio Operations**: Time-based portfolio management through custom predicates
 
-- **Portfolio-Centric Orders**: Revolutionary limit orders that consider entire portfolio composition
-- **Automated Execution Infrastructure**: Sophisticated bot system running hourly order checks
-- **Custom Predicate Development**: Advanced conditional logic extending 1inch LOP capabilities
-- **Strategy Automation**: Set-and-forget portfolio management through intelligent order placement
-
-### Novel Trading Mechanisms
-
-- **Portfolio NFT Trading**: Trade entire curated asset collections as single transactions
-- **Conditional Portfolio Rebalancing**: Automated asset allocation based on market conditions
-- **Social Portfolio Gifting**: Revolutionary mechanism to share curated crypto collections
-- **Intuitive Asset Management**: Drag-and-drop interface for complex portfolio operations
+### Novel DeFi Mechanisms
+- **Portfolio NFT Infrastructure**: Revolutionary system for bundling and transferring asset collections
+- **Cross-Protocol Portfolio Trading**: Bridge between NFT ownership and DeFi trading mechanisms
+- **Secure Portfolio Gifting**: Cryptographically secure system for sharing curated asset collections
+- **Comprehensive 1inch Integration**: Full utilization of 1inch APIs for swap, pricing, and balance data
 
 ## Demo
 
