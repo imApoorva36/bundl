@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${process.env.ONEINCH_API_KEY}`,
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ONEINCH_API_KEY}`,
           'accept': 'application/json',
           'content-type': 'application/json',
         },
