@@ -1,14 +1,16 @@
-# bundl
+# <img src="./frontend/public/bundl3.png" width=200/>
 
 > **Ownable, tradable portfolios bundling assets as NFTs. Organize & send crypto like digital vaults.**
 
 Developed by [Apoorva Agrawal](https://github.com/imApoorva36), [Fahim Ahmed](https://github.com/ahmedfahim21), and [Vedant Tarale](https://github.com/VedantTarale).
 
-![bundl](./frontend/public/bundl.png)
+<img width="1512" height="824" alt="Screenshot 2025-08-03 at 8 52 14 PM" src="https://github.com/user-attachments/assets/06f0af70-09b6-4be5-b8ac-b1731a959a1d" />
+
+![bundl](./frontend/public/Screen.png)
 
 ## Overview
 
-bundl transforms how users manage and trade cryptocurrency portfolios by introducing **portfolio NFTs** - tradable containers that bundle multiple assets together. Think of it as creating "digital investment vaults" that can be organized, shared, and traded as single units while maintaining full transparency and control.
+Bundl transforms how users manage and trade cryptocurrency portfolios by introducing **portfolio NFTs** - tradable containers that bundle multiple assets together. Think of it as creating "digital investment vaults" that can be organized, shared, and traded as single units while maintaining full transparency and control.
 
 ## Key Features
 
@@ -58,7 +60,7 @@ bundl transforms how users manage and trade cryptocurrency portfolios by introdu
 
 ## 1inch Limit Order Protocol Extensions
 
-bundl extends the 1inch Limit Order Protocol with novel NFT portfolio transfer mechanisms and scheduled swap functionality:
+Bundl extends the 1inch Limit Order Protocol with novel NFT portfolio transfer mechanisms and scheduled swap functionality:
 
 ### Custom Predicate for Scheduled Operations
 
@@ -133,17 +135,16 @@ bundl extends the 1inch Limit Order Protocol with novel NFT portfolio transfer m
    python manage.py runserver
    ```
 
+5. **OrderFill Bot Setup**
+```bash
+cd orderFillBot
+npm install
+npm start
+```
+
 ### Environment Configuration
 
-Create `.env.local` in the frontend directory:
-
-```env
-NEXT_PUBLIC_BUNDL_EXECUTOR_ADDRESS=0x...
-NEXT_PUBLIC_BUNDL_REGISTRY_ADDRESS=0x...
-NEXT_PUBLIC_BUNDL_CORE_ADDRESS=0x...
-NEXT_PUBLIC_PREDICATE_ADDRESS=0x...
-NEXT_PUBLIC_ONEINCH_API_KEY=your_api_key_here
-```
+Create `.env` files in the respective directories based on `example.env` files.
 
 ## Usage
 
